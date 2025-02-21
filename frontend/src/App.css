@@ -1,0 +1,217 @@
+:root {
+  --primary-color: #ff6b6b;
+  --secondary-color: #4ecdc4;
+  --background-color: #f7f7f7;
+  --text-color: #2d3436;
+  --border-radius: 8px;
+  --shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.App {
+  text-align: center;
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+h1 {
+  color: var(--primary-color);
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.timer-container {
+  background: white;
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.timer {
+  font-size: 5rem;
+  font-weight: bold;
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
+  font-family: 'Courier New', monospace;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+button {
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.start-btn {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.end-btn {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.current-note {
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.note-input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid transparent;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background-color: transparent;
+}
+
+.note-input:hover {
+  border-color: #eee;
+}
+
+.note-input:focus {
+  border-color: var(--secondary-color);
+  outline: none;
+  background-color: white;
+}
+
+.current-note-input {
+  text-align: center;
+  font-size: 1.1rem;
+  padding: 0.8rem 0;
+}
+
+.current-note-input:hover,
+.current-note-input:focus {
+  padding: 0.8rem;
+}
+
+.action-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: var(--border-radius);
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.action-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.delete-btn {
+  padding: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: transparent;
+  color: #999;
+  font-size: 1.2rem;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.action-item:hover {
+  transform: translateX(5px);
+  border-color: var(--primary-color);
+}
+
+.action-item:hover .delete-btn {
+  opacity: 1;
+}
+
+.delete-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.history-note {
+  width: 200px;
+  text-align: left;
+}
+
+.history {
+  background: white;
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-top: 2rem;
+}
+
+.history h2 {
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.action-time {
+  text-align: left;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.time-label {
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .App {
+    padding: 1rem;
+  }
+  
+  .timer {
+    font-size: 3.5rem;
+  }
+  
+  .action-item {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .history-note {
+    width: 100%;
+  }
+}
