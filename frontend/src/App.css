@@ -114,6 +114,7 @@ button:hover {
 }
 
 .action-item {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -159,6 +160,22 @@ button:hover {
 .delete-btn:hover {
   background-color: var(--primary-color);
   color: white;
+}
+
+.action-item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--primary-color);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.action-item:hover::after {
+  transform: scaleX(1);
 }
 
 .history-note {
@@ -214,4 +231,22 @@ button:hover {
   .history-note {
     width: 100%;
   }
+}
+
+/* 添加載入中動畫 */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.loading::after {
+  content: '';
+  width: 30px;
+  height: 30px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
