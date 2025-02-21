@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
 function App() {
   const [time, setTime] = useState(25 * 60);
@@ -9,6 +11,8 @@ function App() {
   const [editingNote, setEditingNote] = useState(null);
   const [currentNote, setCurrentNote] = useState('專注');
   const [editingNotes, setEditingNotes] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // 載入歷史記錄
   useEffect(() => {
@@ -56,59 +60,71 @@ function App() {
     };
   }, [currentAction]);
 
+  const handleApiError = (error, message) => {
+    console.error(message, error);
+    // 可以加入錯誤提示 UI
+  };
+
   const fetchActions = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/timer/actions');
+      const response = await fetch(`${API_URL}/api/timer/actions`);
+      if (!response.ok) throw new Error('Failed to fetch actions');
       const data = await response.json();
       setActions(data);
     } catch (error) {
-      console.error('Error fetching actions:', error);
+      handleApiError(error, 'Error fetching actions:');
     }
   };
 
   const startTimer = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/timer/start', {
-        method: 'POST'
+      const response = await fetch(`${API_URL}/api/timer/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ note: currentNote })
       });
+      if (!response.ok) throw new Error('Failed to start timer');
       const data = await response.json();
       setCurrentAction(data);
-      setCurrentNote('專注');
       setIsActive(true);
     } catch (error) {
-      console.error('Error starting timer:', error);
+      handleApiError(error, 'Error starting timer:');
     }
   };
 
-  const handleComplete = async () => {
+  const handleComplete = useCallback(async () => {
     if (currentAction) {
       try {
-        await fetch(`http://localhost:5001/api/timer/end/${currentAction._id}`, {
+        const response = await fetch(`${API_URL}/api/timer/end/${currentAction._id}`, {
           method: 'PUT'
         });
+        if (!response.ok) throw new Error('Failed to end timer');
         setIsActive(false);
         setTime(25 * 60);
         setCurrentAction(null);
         setCurrentNote('專注');
         fetchActions();
       } catch (error) {
-        console.error('Error completing timer:', error);
+        handleApiError(error, 'Error completing timer:');
       }
     }
-  };
+  }, [currentAction]);
 
   const updateNote = async (actionId, note) => {
     try {
-      await fetch(`http://localhost:5001/api/timer/note/${actionId}`, {
+      const response = await fetch(`${API_URL}/api/timer/note/${actionId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ note })
       });
+      if (!response.ok) throw new Error('Failed to update note');
       fetchActions();
     } catch (error) {
-      console.error('Error updating note:', error);
+      handleApiError(error, 'Error updating note:');
     }
   };
 
@@ -121,12 +137,13 @@ function App() {
 
   const deleteAction = async (actionId) => {
     try {
-      await fetch(`http://localhost:5001/api/timer/delete/${actionId}`, {
+      const response = await fetch(`${API_URL}/api/timer/delete/${actionId}`, {
         method: 'DELETE'
       });
+      if (!response.ok) throw new Error('Failed to delete action');
       fetchActions();
     } catch (error) {
-      console.error('Error deleting action:', error);
+      handleApiError(error, 'Error deleting action:');
     }
   };
 

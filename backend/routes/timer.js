@@ -31,12 +31,16 @@ router.post('/start', async (req, res) => {
 router.put('/end/:id', async (req, res) => {
   try {
     const action = await Action.findById(req.params.id);
+    if (!action) {
+      return res.status(404).json({ message: 'Action not found' });
+    }
     action.endTime = new Date();
     action.isCompleted = true;
     const updatedAction = await action.save();
     res.json(updatedAction);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error ending timer:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 
