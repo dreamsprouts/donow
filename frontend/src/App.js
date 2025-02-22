@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -8,6 +8,9 @@ import ActionItemEditor from './components/ActionItemEditor';
 import { Box } from '@mui/material';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+
+// 預設的時間選項（分鐘）
+const TIME_OPTIONS = [5, 10, 15, 20, 25, 30, 45, 60, 90, 120];
 
 function App() {
   const [time, setTime] = useState(25 * 60);
@@ -21,6 +24,9 @@ function App() {
   const [error, setError] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [selectedTime, setSelectedTime] = useState(25); // 預設 25 分鐘
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const scrollRef = useRef(null);
 
   // 先定義 fetchActions
   const fetchActions = async () => {
@@ -79,14 +85,14 @@ function App() {
       interval = setInterval(() => {
         const now = new Date();
         const elapsedSeconds = Math.floor((now - startTime) / 1000);
-        const remainingTime = Math.max(25 * 60 - elapsedSeconds, 0);
+        const remainingTime = Math.max(selectedTime * 60 - elapsedSeconds, 0);  // 使用 selectedTime
         setTime(remainingTime);
         
         // 不自動結束，讓使用者手動結束
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isActive, startTime]);
+  }, [isActive, startTime, selectedTime]);  // 添加 selectedTime 到依賴數組
 
   // 頁面關閉/重整的處理
   useEffect(() => {
@@ -137,7 +143,8 @@ function App() {
         },
         body: JSON.stringify({ 
           note: currentNote,
-          startTime: now.toISOString()
+          startTime: now.toISOString(),
+          duration: selectedTime * 60  // 添加選擇的時間（轉換為秒）
         })
       });
       if (!response.ok) throw new Error('Failed to start timer');
@@ -145,6 +152,7 @@ function App() {
       setCurrentAction(data);
       setIsActive(true);
       setStartTime(now);  // 記錄開始時間
+      setTime(selectedTime * 60);  // 設置初始倒數時間為選擇的分鐘數
     } catch (error) {
       handleApiError(error, 'Error starting timer:');
     }
@@ -231,6 +239,24 @@ function App() {
     }
   };
 
+  // 格式化顯示時間
+  const formatDisplayTime = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  // 處理時間選擇
+  const handleTimeSelect = (minutes) => {
+    setSelectedTime(minutes);
+    setTime(minutes * 60);
+  };
+
   const minutes = Math.floor(time / 60);
   const seconds = time % 60;
 
@@ -259,14 +285,64 @@ function App() {
     return groups;
   };
 
+  const handleScroll = (direction) => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const scrollAmount = 150;  // 減少每次滾動的距離
+    const maxScroll = container.scrollWidth - container.parentElement.offsetWidth;
+    
+    const newPosition = direction === 'left' 
+      ? Math.max(0, scrollPosition - scrollAmount)
+      : Math.min(maxScroll, scrollPosition + scrollAmount);
+
+    setScrollPosition(newPosition);
+    container.style.transform = `translateX(-${newPosition}px)`;
+  };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={zhTW}>
       <div className="App">
         <h1>番茄鐘</h1>
         
         <div className="timer-container">
+          <div className="time-options-container">
+            <button 
+              className="scroll-btn"
+              onClick={() => handleScroll('left')}
+              disabled={isActive || scrollPosition === 0}
+              style={{ outline: 'none' }}
+            >
+              <span style={{ userSelect: 'none' }}>‹</span>
+            </button>
+            
+            <div className="time-options">
+              <div className="time-options-scroll" ref={scrollRef}>
+                {TIME_OPTIONS.map(minutes => (
+                  <button
+                    key={minutes}
+                    onClick={() => handleTimeSelect(minutes)}
+                    className={`time-option-btn ${selectedTime === minutes ? 'selected' : ''}`}
+                    disabled={isActive}
+                  >
+                    {minutes}m
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button 
+              className="scroll-btn"
+              onClick={() => handleScroll('right')}
+              disabled={isActive || scrollPosition >= (scrollRef.current?.scrollWidth - scrollRef.current?.parentElement.offsetWidth || 0)}
+              style={{ outline: 'none' }}
+            >
+              <span style={{ userSelect: 'none' }}>›</span>
+            </button>
+          </div>
+
           <div className="timer">
-            {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
+            {formatDisplayTime(time)}
           </div>
           
           <div className="current-note">
