@@ -90,11 +90,12 @@ button {
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  outline: none !important;
 }
 
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
+button:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .start-btn {
@@ -666,4 +667,90 @@ button:hover {
 .time-picker-arrow {
   color: var(--gray-500);
   margin-left: var(--spacing-1);
+}
+
+.time-options-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.time-options {
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+  margin: 0 32px;
+}
+
+.time-options-scroll {
+  display: flex;
+  gap: var(--spacing-2);
+  transition: transform 0.3s ease;
+  position: relative;
+}
+
+.time-option-btn {
+  padding: var(--spacing-2) var(--spacing-3);
+  min-width: 60px;
+  border-radius: var(--border-radius);
+  background: var(--gray-100);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  outline: none;
+}
+
+.time-option-btn:hover:not(:disabled) {
+  background: var(--gray-200);
+}
+
+.time-option-btn.selected {
+  background: var(--secondary-color);
+  color: white;
+}
+
+.time-option-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.scroll-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  background: none;
+  border: none;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--gray-400);
+  font-size: 20px;
+  transition: color 0.2s ease;
+  user-select: none;
+}
+
+.scroll-btn:hover:not(:disabled) {
+  color: var(--gray-600);
+}
+
+.scroll-btn:first-child {
+  left: 0;
+}
+
+.scroll-btn:last-child {
+  right: 0;
+}
+
+.scroll-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
