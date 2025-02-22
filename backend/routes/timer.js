@@ -16,10 +16,14 @@ router.get('/actions', async (req, res) => {
 router.post('/start', async (req, res) => {
   try {
     const { note, startTime } = req.body;
+    const systemStartTime = startTime || new Date();
+    
     const action = new Action({
-      startTime: startTime || new Date(),
+      startTime: systemStartTime,
+      userStartTime: systemStartTime, // 自動設定使用者時間
       note: note || '專注'
     });
+    
     const newAction = await action.save();
     res.status(201).json(newAction);
   } catch (error) {
@@ -31,12 +35,17 @@ router.post('/start', async (req, res) => {
 router.put('/end/:id', async (req, res) => {
   try {
     const { endTime } = req.body;
+    const systemEndTime = endTime || new Date();
+    
     const action = await Action.findById(req.params.id);
     if (!action) {
       return res.status(404).json({ message: 'Action not found' });
     }
-    action.endTime = endTime || new Date();
+    
+    action.endTime = systemEndTime;
+    action.userEndTime = systemEndTime; // 自動設定使用者時間
     action.isCompleted = true;
+    
     const updatedAction = await action.save();
     res.json(updatedAction);
   } catch (error) {
