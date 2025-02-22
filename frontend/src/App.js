@@ -17,69 +17,106 @@ function App() {
   const [editingNotes, setEditingNotes] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [startTime, setStartTime] = useState(null);
 
-  // 載入歷史記錄
-  useEffect(() => {
-    fetchActions();
-  }, []);
+  // 先定義 fetchActions
+  const fetchActions = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/timer/actions`);
+      if (!response.ok) throw new Error('Failed to fetch actions');
+      const data = await response.json();
+      const sortedData = data.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+      setActions(sortedData);
+    } catch (error) {
+      console.error('Error fetching actions:', error);
+    }
+  };
+
+  // 再定義 handleComplete
+  const handleComplete = useCallback(async () => {
+    if (currentAction) {
+      try {
+        // 使用當前時間作為結束時間
+        const endTime = new Date().toISOString();
+        
+        const response = await fetch(`${API_URL}/api/timer/end/${currentAction._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            endTime: endTime
+          })
+        });
+        
+        if (!response.ok) throw new Error('Failed to end timer');
+        
+        // 重設所有狀態
+        setIsActive(false);
+        setTime(25 * 60);
+        setCurrentAction(null);
+        setCurrentNote('開始一段專注時間');
+        setStartTime(null);  // 清除開始時間
+        fetchActions();
+      } catch (error) {
+        console.error('Error completing timer:', error);
+      }
+    }
+  }, [currentAction]);
 
   // 計時器邏輯
   useEffect(() => {
     let interval = null;
-    if (isActive && time > 0) {
+    if (isActive && startTime) {
       interval = setInterval(() => {
-        setTime(prev => {
-          if (prev <= 1) {
-            handleComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
+        const now = new Date();
+        const elapsedSeconds = Math.floor((now - startTime) / 1000);
+        const remainingTime = Math.max(25 * 60 - elapsedSeconds, 0);
+        setTime(remainingTime);
+        
+        // 不自動結束，讓使用者手動結束
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isActive, time]);
+  }, [isActive, startTime]);
 
-  // 添加自動結束計時的處理
+  // 頁面關閉/重整的處理
   useEffect(() => {
-    // 在組件卸載時檢查並結束未完成的計時
-    return () => {
+    const handleBeforeUnload = (e) => {
       if (currentAction && !currentAction.endTime) {
-        handleComplete();
-      }
-    };
-  }, []);
-
-  // 添加頁面重新整理的處理
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (currentAction && !currentAction.endTime) {
-        handleComplete();
+        // 在頁面關閉前同步執行結束操作
+        fetch(`${API_URL}/api/timer/end/${currentAction._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            endTime: new Date().toISOString()
+          }),
+          // 使用同步請求確保在頁面關閉前完成
+          keepalive: true
+        }).catch(console.error);
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      // 組件卸載時也要結束計時
+      if (currentAction && !currentAction.endTime) {
+        handleComplete();
+      }
     };
-  }, [currentAction]);
+  }, [currentAction, handleComplete]);
+
+  // 初始載入
+  useEffect(() => {
+    fetchActions();
+  }, []);
 
   const handleApiError = (error, message) => {
     console.error(message, error);
     // 可以加入錯誤提示 UI
-  };
-
-  const fetchActions = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/timer/actions`);
-      if (!response.ok) throw new Error('Failed to fetch actions');
-      const data = await response.json();
-      // 根據開始時間降序排序（新的在前）
-      const sortedData = data.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-      setActions(sortedData);
-    } catch (error) {
-      handleApiError(error, 'Error fetching actions:');
-    }
   };
 
   const startTimer = async () => {
@@ -99,36 +136,11 @@ function App() {
       const data = await response.json();
       setCurrentAction(data);
       setIsActive(true);
+      setStartTime(now);  // 記錄開始時間
     } catch (error) {
       handleApiError(error, 'Error starting timer:');
     }
   };
-
-  const handleComplete = useCallback(async () => {
-    if (currentAction) {
-      try {
-        const now = new Date();
-        const response = await fetch(`${API_URL}/api/timer/end/${currentAction._id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            endTime: now.toISOString()
-          })
-        });
-        
-        if (!response.ok) throw new Error('Failed to end timer');
-        setIsActive(false);
-        setTime(25 * 60);
-        setCurrentAction(null);
-        setCurrentNote('開始一段專注時間');
-        fetchActions();
-      } catch (error) {
-        handleApiError(error, 'Error completing timer:');
-      }
-    }
-  }, [currentAction]);
 
   const updateNote = async (actionId, note) => {
     try {
