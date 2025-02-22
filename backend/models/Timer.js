@@ -33,6 +33,12 @@ const actionSchema = new mongoose.Schema({
   isCompleted: {
     type: Boolean,
     default: false
+  },
+  
+  task: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Task',
+    required: true  // 保持必填
   }
 });
 

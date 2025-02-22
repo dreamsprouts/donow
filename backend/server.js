@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const mongoose = require('mongoose');
+const tasksRouter = require('./routes/tasks');
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ connectDB();
 
 // Routes
 app.use('/api/timer', require('./routes/timer'));
+app.use('/api/tasks', tasksRouter);
 
 const PORT = process.env.PORT || 5001;
 

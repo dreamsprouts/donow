@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Stack, IconButton } from '@mui/material';
 import TimeRangePicker from './TimeRangePicker';
+import TaskSelector from './TaskSelector';
 import { addMinutes, differenceInMinutes } from 'date-fns';
 
 const ActionItemEditor = ({ action, onClose, onSave }) => {
@@ -9,11 +10,32 @@ const ActionItemEditor = ({ action, onClose, onSave }) => {
   const [endTime, setEndTime] = useState(new Date(action.userEndTime || action.endTime));
   const [note, setNote] = useState(action.note || '');
   const [duration, setDuration] = useState('');
+  const [selectedTask, setSelectedTask] = useState(action.task);
+  const [isTaskEditing, setIsTaskEditing] = useState(false);
 
   useEffect(() => {
+    console.log('Current action task:', action.task); // 檢查 task 資訊
     const minutes = differenceInMinutes(endTime, startTime);
     setDuration(`${minutes}m`);
   }, [startTime, endTime]);
+
+  // 監控 selectedTask 的變化
+  useEffect(() => {
+    console.log('selectedTask 更新:', {
+      id: selectedTask?._id,
+      name: selectedTask?.name,
+      source: 'state update'
+    });
+  }, [selectedTask]);
+
+  // 監控 action.task 的變化
+  useEffect(() => {
+    console.log('action.task 更新:', {
+      id: action.task?._id,
+      name: action.task?.name,
+      source: 'prop update'
+    });
+  }, [action.task]);
 
   const handleDateChange = (newDate) => {
     setDate(newDate);
@@ -29,13 +51,44 @@ const ActionItemEditor = ({ action, onClose, onSave }) => {
   };
 
   const handleSave = () => {
+    console.log('handleSave 被呼叫:', {
+      selectedTask,
+      originalTask: action.task
+    });
     onSave({
       ...action,
       userStartTime: startTime.toISOString(),
       userEndTime: endTime.toISOString(),
-      note: note
+      note: note,
+      task: selectedTask
     });
   };
+
+  // 編輯器專用的 task 處理
+  const handleEditorTaskSelect = (taskId, taskObject) => {
+    console.log('Editor TaskSelect:', taskObject);
+    setSelectedTask(taskObject);
+    setIsTaskEditing(false);
+  };
+
+  // 處理顯示區域點擊
+  const handleTaskBoxClick = () => {
+    setIsTaskEditing(true);
+  };
+
+  // 處理點擊其他區域
+  const handleClickOutside = (e) => {
+    if (!e.target.closest('.task-selector-container')) {
+      setIsTaskEditing(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <Box
@@ -72,16 +125,13 @@ const ActionItemEditor = ({ action, onClose, onSave }) => {
         </Box>
       </Stack>
 
-      {/* Task */}
-      <Box sx={{ 
-        mb: 3,
-        p: 2,
-        bgcolor: '#F9FAFB',
-        borderRadius: 1,
-      }}>
-        <Typography sx={{ textAlign: 'left' }}>
-          Task Function In Developing
-        </Typography>
+      {/* Task Selection Area */}
+      <Box sx={{ mb: 3 }} className="task-selector-container">
+        <TaskSelector 
+          onTaskSelect={handleEditorTaskSelect}
+          defaultValue={selectedTask || action.task}
+          context="editor"  // 加上標識
+        />
       </Box>
 
       {/* Time Range Picker */}
