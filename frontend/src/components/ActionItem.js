@@ -6,7 +6,10 @@ const ActionItem = ({ action, onDelete, onNoteUpdate }) => {
   const formatTime = (start, end) => {
     if (!start || !end) return '--:--';
     try {
-      const seconds = differenceInSeconds(new Date(end), new Date(start));
+      const seconds = differenceInSeconds(
+        new Date(action.userEndTime || action.endTime), 
+        new Date(action.userStartTime || action.startTime)
+      );
       const hours = Math.floor(seconds / 3600);
       const minutes = Math.floor((seconds % 3600) / 60);
       const secs = seconds % 60;
@@ -40,10 +43,16 @@ const ActionItem = ({ action, onDelete, onNoteUpdate }) => {
       <div className="action-content">
         <div className="action-time">
           <span>
-            {formatDate(action.startTime)} - {action.endTime ? format(new Date(action.endTime), 'HH:mm') : '--:--'}
+            {formatDate(action.userStartTime || action.startTime)} - 
+            {action.userEndTime || action.endTime ? 
+              format(new Date(action.userEndTime || action.endTime), 'HH:mm') : 
+              '--:--'}
           </span>
           <span className="duration">
-            {formatTime(action.startTime, action.endTime)}
+            {formatTime(
+              action.userStartTime || action.startTime,
+              action.userEndTime || action.endTime
+            )}
           </span>
         </div>
         

@@ -42,4 +42,23 @@ actionSchema.virtual('duration').get(function() {
   return this.userEndTime - this.userStartTime;
 });
 
+// 添加 pre save 中間件來自動同步時間
+actionSchema.pre('save', function(next) {
+  // 如果是新建立的記錄，或是更新了 startTime
+  if (this.isNew || this.isModified('startTime')) {
+    if (!this.userStartTime) {
+      this.userStartTime = this.startTime;
+    }
+  }
+  
+  // 如果更新了 endTime
+  if (this.isModified('endTime')) {
+    if (!this.userEndTime) {
+      this.userEndTime = this.endTime;
+    }
+  }
+  
+  next();
+});
+
 module.exports = mongoose.model('Action', actionSchema);
