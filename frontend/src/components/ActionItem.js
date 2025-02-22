@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, differenceInSeconds } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 const ActionItem = ({ action, onDelete, onNoteUpdate, onEdit }) => {
   const [inputValue, setInputValue] = useState(action.note);
@@ -86,6 +86,15 @@ const ActionItem = ({ action, onDelete, onNoteUpdate, onEdit }) => {
               )}
             </span>
           </div>
+          
+          {action.task && (
+            <div 
+              className="task-tag"
+              style={{ backgroundColor: action.task.color }}
+            >
+              {action.task.name}
+            </div>
+          )}
           
           <input
             type="text"

@@ -57,19 +57,19 @@ h1 {
 
 .timer-container {
   background: var(--gray-50);
-  padding: 2rem 1rem;
+  padding: 1rem;
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
   position: sticky;
   top: 0;
   z-index: 2;
 }
 
 .timer {
-  font-size: 5rem;
+  font-size: 4rem;
   font-weight: bold;
   line-height: 1;
   margin: 0;
@@ -84,8 +84,8 @@ h1 {
 }
 
 button {
-  padding: 0.8rem 2rem;
-  font-size: 1.1rem;
+  padding: 0.5rem 2rem;
+  font-size: 1rem;
   border: none;
   border-radius: var(--border-radius);
   cursor: pointer;
@@ -112,6 +112,7 @@ button:focus {
   width: 100%;
   max-width: 400px;
   padding: 0 1rem;
+  margin-top: -0.5rem;
 }
 
 /* 輸入框基本樣式 */
@@ -188,7 +189,7 @@ button:focus {
 .action-content {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 2rem;
   width: 100%;
 }
 
@@ -233,10 +234,9 @@ button:focus {
 
 /* 持續時間 */
 .duration {
-  color: #6B7280;
-  font-size: 0.95rem;
-  text-align: left;
-  margin-left: 2rem;
+  flex: 0 0 80px;   /* 固定寬度，不縮放 */
+  color: var(--primary-color);
+  font-size: 0.875rem;
 }
 
 /* Notes 區域 */
@@ -316,14 +316,6 @@ button:focus {
   font-weight: 500;
 }
 
-.duration {
-  text-align: right;
-  min-width: 80px;
-  margin-left: auto;
-  color: var(--primary-color);
-  font-weight: bold;
-}
-
 .time-picker-input {
   width: 100%;
   height: 44px;
@@ -358,8 +350,13 @@ button:focus {
 }
 
 .history-note {
-  width: 200px;
-  text-align: left;
+  flex: 1;          /* 佔用剩餘空間，但可以縮小 */
+  min-width: 0;     /* 允許內容縮小 */
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .history {
@@ -694,14 +691,14 @@ button:focus {
 }
 
 .time-option-btn {
-  padding: var(--spacing-2) var(--spacing-3);
-  min-width: 60px;
+  padding: 0.35rem 0.75rem;
+  min-width: 50px;
   border-radius: var(--border-radius);
   background: var(--gray-100);
   border: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  outline: none;
+  font-size: 0.875rem;
 }
 
 .time-option-btn:hover:not(:disabled) {
@@ -753,4 +750,22 @@ button:focus {
 .scroll-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+/* 時間和時長 */
+.action-time-range {
+  flex: 0 0 200px;  /* 固定寬度，不縮放 */
+  color: var(--gray-900);
+  font-size: 0.875rem;
+}
+
+/* Task 標籤 */
+.task-tag {
+  flex: 0 0 120px;  /* 縮小到 120px */
+  padding: 0.25rem 0.75rem;  /* 稍微縮小內邊距 */
+  border-radius: 9999px;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
 }

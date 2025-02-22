@@ -1,31 +1,54 @@
 const express = require('express');
 const router = express.Router();
 const Action = require('../models/Timer');
+const Task = require('../models/Task');
 
 // 獲取所有計時記錄
 router.get('/actions', async (req, res) => {
   try {
-    const actions = await Action.find().sort({ systemStartTime: -1 });
+    const actions = await Action.find()
+      .populate('task')
+      .sort({ systemStartTime: -1 });
     res.json(actions);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
+// 在路由處理之前先獲取預設任務 ID
+let defaultTaskId;
+async function getDefaultTaskId() {
+  if (!defaultTaskId) {
+    const defaultTask = await Task.findOne({ isDefault: true });
+    if (defaultTask) {
+      defaultTaskId = defaultTask._id;
+    }
+  }
+  return defaultTaskId;
+}
+
 // 開始新的計時
 router.post('/start', async (req, res) => {
   try {
-    const { note, startTime } = req.body;
+    const { note, startTime, taskId } = req.body;
     const systemStartTime = startTime || new Date();
     
+    // 如果沒有指定 taskId，使用預設任務
+    const actualTaskId = taskId || await getDefaultTaskId();
+    if (!actualTaskId) {
+      return res.status(500).json({ message: '找不到預設任務' });
+    }
+
     const action = new Action({
       startTime: systemStartTime,
-      userStartTime: systemStartTime, // 自動設定使用者時間
-      note: note || '專注'
+      userStartTime: systemStartTime,
+      note: note || '專注',
+      task: actualTaskId
     });
     
     const newAction = await action.save();
-    res.status(201).json(newAction);
+    const populatedAction = await Action.findById(newAction._id);
+    res.status(201).json(populatedAction);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -114,6 +137,28 @@ router.put('/time/:id', async (req, res) => {
     res.json(updatedAction);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+// 更新 action 的 task
+router.put('/actions/:id/task', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { taskId } = req.body;
+
+    const action = await Action.findByIdAndUpdate(
+      id,
+      { task: taskId },
+      { new: true }
+    ).populate('task');
+
+    if (!action) {
+      return res.status(404).json({ message: '找不到該筆記錄' });
+    }
+
+    res.json(action);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 

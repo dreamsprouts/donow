@@ -6,6 +6,9 @@ import { zhTW } from 'date-fns/locale';
 import ActionItem from './components/ActionItem';
 import ActionItemEditor from './components/ActionItemEditor';
 import { Box } from '@mui/material';
+import TaskTester from './components/TaskTester';
+import TaskSelector from './components/TaskSelector';
+import { updateActionTask } from './services/taskService';  // 修正路徑
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
@@ -18,7 +21,7 @@ function App() {
   const [currentAction, setCurrentAction] = useState(null);
   const [actions, setActions] = useState([]);
   const [editingNote, setEditingNote] = useState(null);
-  const [currentNote, setCurrentNote] = useState('開始一段專注時間');
+  const [currentNote, setCurrentNote] = useState('專注一段時間');
   const [editingNotes, setEditingNotes] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -27,6 +30,8 @@ function App() {
   const [selectedTime, setSelectedTime] = useState(25); // 預設 25 分鐘
   const [scrollPosition, setScrollPosition] = useState(0);
   const scrollRef = useRef(null);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   // 先定義 fetchActions
   const fetchActions = async () => {
@@ -34,13 +39,23 @@ function App() {
       const response = await fetch(`${API_URL}/api/timer/actions`);
       if (!response.ok) throw new Error('Failed to fetch actions');
       const data = await response.json();
-      // 修改排序邏輯，優先使用 userStartTime
-      const sortedData = data.sort((a, b) => {
-        const dateA = new Date(b.userStartTime || b.startTime);
-        const dateB = new Date(a.userStartTime || a.startTime);
-        return dateA - dateB;
-      });
+      
+      const sortedData = data
+        .filter(action => action.task) // 確保有 task
+        .sort((a, b) => {
+          const dateA = new Date(b.userStartTime || b.startTime);
+          const dateB = new Date(a.userStartTime || a.startTime);
+          return dateA - dateB;
+        });
+      
       setActions(sortedData);
+      
+      // 如果有資料，設置最近使用的 task
+      if (sortedData.length > 0 && sortedData[0].task) {
+        setSelectedTaskId(sortedData[0].task._id);
+        setSelectedTask(sortedData[0].task);
+      }
+      
     } catch (error) {
       console.error('Error fetching actions:', error);
     }
@@ -69,7 +84,7 @@ function App() {
         setIsActive(false);
         setTime(25 * 60);
         setCurrentAction(null);
-        setCurrentNote('開始一段專注時間');
+        setCurrentNote('專注一段時間');
         setStartTime(null);  // 清除開始時間
         fetchActions();
       } catch (error) {
@@ -133,6 +148,11 @@ function App() {
     // 可以加入錯誤提示 UI
   };
 
+  const handleTimerTaskSelect = (taskId, task) => {
+    setSelectedTaskId(taskId);
+    setSelectedTask(task);
+  };
+
   const startTimer = async () => {
     try {
       const now = new Date();
@@ -144,7 +164,8 @@ function App() {
         body: JSON.stringify({ 
           note: currentNote,
           startTime: now.toISOString(),
-          duration: selectedTime * 60  // 添加選擇的時間（轉換為秒）
+          duration: selectedTime * 60,
+          taskId: selectedTaskId  // 添加 taskId
         })
       });
       if (!response.ok) throw new Error('Failed to start timer');
@@ -221,16 +242,21 @@ function App() {
 
   const handleEditorSave = async (editedAction) => {
     try {
-      // 1. 先更新時間
+      // 1. 更新時間
       await handleTimeUpdate(editedAction._id, {
         userStartTime: editedAction.userStartTime,
         userEndTime: editedAction.userEndTime
       });
 
-      // 2. 如果筆記有變化，使用現有的 updateNote 函數更新
+      // 2. 更新任務 - 使用 taskService
+      if (editedAction.task) {
+        await updateActionTask(editedAction._id, editedAction.task._id);
+      }
+
+      // 3. 更新筆記
       await updateNote(editedAction._id, editedAction.note);
 
-      // 3. 關閉編輯器並重新獲取數據
+      // 4. 關閉編輯器並重新獲取數據
       setIsEditorOpen(false);
       setCurrentAction(null);
       fetchActions();
@@ -346,14 +372,21 @@ function App() {
           </div>
           
           <div className="current-note">
-            <input
-              type="text"
-              value={currentNote}
-              onChange={(e) => setCurrentNote(e.target.value)}
-              placeholder="開始一段專注時間..."
-              className="note-input current-note-input"
-              disabled={isActive}
-            />
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+              <TaskSelector 
+                onTaskSelect={handleTimerTaskSelect}
+                defaultValue={selectedTask}
+                context="timer"  // 加上標識
+              />
+              <input
+                type="text"
+                value={currentNote}
+                onChange={(e) => setCurrentNote(e.target.value)}
+                placeholder="專注一段時間..."
+                className="note-input current-note-input"
+                disabled={isActive}
+              />
+            </Box>
           </div>
 
           <div className="controls">
