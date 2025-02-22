@@ -4,6 +4,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { zhTW } from 'date-fns/locale';
 import ActionItem from './components/ActionItem';
+import ActionItemEditor from './components/ActionItemEditor';
 import { Box } from '@mui/material';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
@@ -19,6 +20,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [startTime, setStartTime] = useState(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   // 先定義 fetchActions
   const fetchActions = async () => {
@@ -26,7 +28,12 @@ function App() {
       const response = await fetch(`${API_URL}/api/timer/actions`);
       if (!response.ok) throw new Error('Failed to fetch actions');
       const data = await response.json();
-      const sortedData = data.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+      // 修改排序邏輯，優先使用 userStartTime
+      const sortedData = data.sort((a, b) => {
+        const dateA = new Date(b.userStartTime || b.startTime);
+        const dateB = new Date(a.userStartTime || a.startTime);
+        return dateA - dateB;
+      });
       setActions(sortedData);
     } catch (error) {
       console.error('Error fetching actions:', error);
@@ -194,13 +201,44 @@ function App() {
     }
   };
 
+  const handleEdit = (action) => {
+    setCurrentAction(action);
+    setIsEditorOpen(true);
+  };
+
+  const handleEditorClose = () => {
+    setIsEditorOpen(false);
+    setCurrentAction(null);
+  };
+
+  const handleEditorSave = async (editedAction) => {
+    try {
+      // 1. 先更新時間
+      await handleTimeUpdate(editedAction._id, {
+        userStartTime: editedAction.userStartTime,
+        userEndTime: editedAction.userEndTime
+      });
+
+      // 2. 如果筆記有變化，使用現有的 updateNote 函數更新
+      await updateNote(editedAction._id, editedAction.note);
+
+      // 3. 關閉編輯器並重新獲取數據
+      setIsEditorOpen(false);
+      setCurrentAction(null);
+      fetchActions();
+    } catch (error) {
+      console.error('Error updating action:', error);
+    }
+  };
+
   const minutes = Math.floor(time / 60);
   const seconds = time % 60;
 
   const groupActionsByDate = (actions) => {
     const groups = {};
     actions.forEach(action => {
-      const date = new Date(action.startTime).toLocaleDateString('zh-TW', {
+      // 已經修改過了，使用 userStartTime
+      const date = new Date(action.userStartTime || action.startTime).toLocaleDateString('zh-TW', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
@@ -209,6 +247,14 @@ function App() {
         groups[date] = [];
       }
       groups[date].push(action);
+    });
+    // 確保每個日期組內的項目也是按時間排序的
+    Object.values(groups).forEach(group => {
+      group.sort((a, b) => {
+        const dateA = new Date(b.userStartTime || b.startTime);
+        const dateB = new Date(a.userStartTime || a.startTime);
+        return dateA - dateB;
+      });
     });
     return groups;
   };
@@ -256,12 +302,35 @@ function App() {
                     onDelete={deleteAction}
                     onNoteUpdate={updateNote}
                     onTimeUpdate={handleTimeUpdate}
+                    onEdit={handleEdit}
                   />
                 ))}
               </div>
             ))}
           </div>
         </div>
+
+        {isEditorOpen && (
+          <>
+            <div 
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                zIndex: 999
+              }}
+              onClick={handleEditorClose}
+            />
+            <ActionItemEditor
+              action={currentAction}
+              onClose={handleEditorClose}
+              onSave={handleEditorSave}
+            />
+          </>
+        )}
       </div>
     </LocalizationProvider>
   );

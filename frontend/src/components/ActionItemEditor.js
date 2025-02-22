@@ -1,31 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Stack, IconButton } from '@mui/material';
-import DateTimePickerTest from './DateTimePickerTest';
 import TimeRangePicker from './TimeRangePicker';
-import { addMinutes } from 'date-fns';
+import { addMinutes, differenceInMinutes } from 'date-fns';
 
-const ActionItemEditor = () => {
-  const [date, setDate] = useState(new Date());
-  const [startTime, setStartTime] = useState(new Date());
-  const [endTime, setEndTime] = useState(addMinutes(new Date(), 15));
-  const [note, setNote] = useState('');
+const ActionItemEditor = ({ action, onClose, onSave }) => {
+  const [date, setDate] = useState(new Date(action.userStartTime || action.startTime));
+  const [startTime, setStartTime] = useState(new Date(action.userStartTime || action.startTime));
+  const [endTime, setEndTime] = useState(new Date(action.userEndTime || action.endTime));
+  const [note, setNote] = useState(action.note || '');
+  const [duration, setDuration] = useState('');
+
+  useEffect(() => {
+    const minutes = differenceInMinutes(endTime, startTime);
+    setDuration(`${minutes}m`);
+  }, [startTime, endTime]);
+
+  const handleDateChange = (newDate) => {
+    setDate(newDate);
+    
+    const newStartTime = new Date(startTime);
+    const newEndTime = new Date(endTime);
+    
+    newStartTime.setFullYear(newDate.getFullYear(), newDate.getMonth(), newDate.getDate());
+    newEndTime.setFullYear(newDate.getFullYear(), newDate.getMonth(), newDate.getDate());
+    
+    setStartTime(newStartTime);
+    setEndTime(newEndTime);
+  };
+
+  const handleSave = () => {
+    onSave({
+      ...action,
+      userStartTime: startTime.toISOString(),
+      userEndTime: endTime.toISOString(),
+      note: note
+    });
+  };
 
   return (
-    <Box sx={{ 
-      width: '100%',
-      maxWidth: 600,
-      bgcolor: 'white',
-      borderRadius: 2,
-      p: 3,
-      boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.1)',
-    }}>
+    <Box
+      role="dialog"
+      aria-modal="true"
+      sx={{ 
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '100%',
+        maxWidth: 600,
+        bgcolor: 'white',
+        borderRadius: 2,
+        p: 3,
+        boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.1)',
+        zIndex: 1000,
+      }}
+    >
       {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" sx={{ fontSize: '2rem', fontWeight: 'bold' }}>
-          14m
+          {duration}
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton sx={{ color: '#6B7280' }}>
+          <IconButton 
+            onClick={onClose}
+            sx={{ color: '#6B7280' }}
+          >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M16 16L4 4M16 4L4 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
@@ -51,7 +90,7 @@ const ActionItemEditor = () => {
           date={date}
           startTime={startTime}
           endTime={endTime}
-          onDateChange={setDate}
+          onDateChange={handleDateChange}
           onStartTimeChange={setStartTime}
           onEndTimeChange={setEndTime}
         />
@@ -92,6 +131,7 @@ const ActionItemEditor = () => {
               bgcolor: '#4F46E5'
             }
           }}
+          onClick={handleSave}
         >
           SAVE
         </Button>

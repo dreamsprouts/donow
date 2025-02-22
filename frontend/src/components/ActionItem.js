@@ -1,8 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { format, differenceInSeconds } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
+import { Box } from '@mui/material';
 
-const ActionItem = ({ action, onDelete, onNoteUpdate }) => {
+const ActionItem = ({ action, onDelete, onNoteUpdate, onEdit }) => {
+  const [inputValue, setInputValue] = useState(action.note);
+  const [isComposing, setIsComposing] = useState(false);
+
+  useEffect(() => {
+    setInputValue(action.note);
+  }, [action.note]);
+
+  const handleNoteChange = (e) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  const handleCompositionEnd = (e) => {
+    setIsComposing(false);
+    onNoteUpdate(action._id, e.target.value);
+  };
+
+  const handleBlur = () => {
+    if (!isComposing) {
+      onNoteUpdate(action._id, inputValue);
+    }
+  };
+
   const formatTime = (start, end) => {
     if (!start || !end) return '--:--';
     try {
@@ -40,36 +67,48 @@ const ActionItem = ({ action, onDelete, onNoteUpdate }) => {
 
   return (
     <div className="action-item">
-      <div className="action-content">
-        <div className="action-time">
-          <span>
-            {formatDate(action.userStartTime || action.startTime)} - 
-            {action.userEndTime || action.endTime ? 
-              format(new Date(action.userEndTime || action.endTime), 'HH:mm') : 
-              '--:--'}
-          </span>
-          <span className="duration">
-            {formatTime(
-              action.userStartTime || action.startTime,
-              action.userEndTime || action.endTime
-            )}
-          </span>
+      <Box 
+        onClick={() => onEdit(action)} 
+        className="action-item-box"
+      >
+        <div className="action-content">
+          <div className="action-time">
+            <span className="action-time-range">
+              {formatDate(action.userStartTime || action.startTime)} - 
+              {action.userEndTime || action.endTime ? 
+                format(new Date(action.userEndTime || action.endTime), 'HH:mm') : 
+                '--:--'}
+            </span>
+            <span className="duration">
+              {formatTime(
+                action.userStartTime || action.startTime,
+                action.userEndTime || action.endTime
+              )}
+            </span>
+          </div>
+          
+          <input
+            type="text"
+            value={inputValue}
+            onChange={handleNoteChange}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
+            onBlur={handleBlur}
+            className="note-input history-note"
+            onClick={(e) => e.stopPropagation()}
+          />
+          
+          <button
+            className="delete-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(action._id);
+            }}
+          >
+            ×
+          </button>
         </div>
-        
-        <input
-          type="text"
-          value={action.note}
-          onChange={(e) => onNoteUpdate(action._id, e.target.value)}
-          className="note-input history-note"
-        />
-        
-        <button
-          className="delete-btn"
-          onClick={() => onDelete(action._id)}
-        >
-          ×
-        </button>
-      </div>
+      </Box>
     </div>
   );
 };
