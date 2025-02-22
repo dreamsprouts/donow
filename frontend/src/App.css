@@ -149,40 +149,115 @@ button:hover {
 .action-item {
   position: relative;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 1rem;
   padding: 1.2rem;
+  background: white;
   border: 1px solid #eee;
   border-radius: var(--border-radius);
-  transition: all 0.2s ease;
-  background: white;
 }
 
 .action-content {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1rem;
   width: 100%;
 }
 
-.delete-btn {
-  padding: 0.5rem;
-  width: 2rem;
-  height: 2rem;
+/* 統一 icon 樣式 */
+.icon {
+  color: #6B7280;
+  font-size: 1.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background-color: transparent;
-  color: #999;
-  font-size: 1.2rem;
-  opacity: 0;
-  transition: all 0.2s ease;
+  width: 24px;
+  height: 24px;
 }
 
-.action-item:hover {
-  transform: translateX(5px);
-  border-color: var(--primary-color);
+/* 任務標題樣式 */
+.task-title {
+  color: #111827;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+  flex: 1;
+}
+
+/* 時間範圍容器 */
+.time-range {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
+/* 開始和結束時間 */
+.time-display {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+/* 持續時間 */
+.duration {
+  color: #6B7280;
+  font-size: 0.95rem;
+  text-align: left;
+  margin-left: 2rem;
+}
+
+/* Notes 區域 */
+.notes-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  color: #6B7280;
+}
+
+.notes-text {
+  font-size: 0.95rem;
+  color: #6B7280;
+  text-align: left;
+  flex: 1;
+}
+
+/* 關閉按鈕 */
+.close-button {
+  color: #6B7280;
+  background: transparent;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  color: #111827;
+}
+
+/* 刪除按鈕 */
+.delete-btn {
+  color: #6B7280;
+  background: transparent;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
 }
 
 .action-item:hover .delete-btn {
@@ -190,24 +265,42 @@ button:hover {
 }
 
 .delete-btn:hover {
-  background-color: var(--primary-color);
-  color: white;
+  color: var(--primary-color);
+}
+
+/* 移除之前的一些動畫效果，讓界面更簡潔 */
+.action-item:hover {
+  border-color: #E5E7EB;
 }
 
 .action-item::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 2px;
-  background: var(--primary-color);
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
+  display: none;
 }
 
-.action-item:hover::after {
-  transform: scaleX(1);
+/* 調整 action-time 的樣式 */
+.action-time {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: auto;
+  flex: 1;
+}
+
+/* 移動端適配 */
+@media (max-width: 768px) {
+  .action-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .time-range {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .duration {
+    margin-left: 0;
+  }
 }
 
 .history-note {
@@ -354,4 +447,91 @@ button:hover {
 
 .date-group .action-item:last-child {
   margin-bottom: 0;
+}
+
+/* 時間選擇器相關樣式 */
+.time-picker-container {
+  width: 100%;
+  position: relative;
+}
+
+.time-picker-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-size: 14px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  color: #111827;
+}
+
+.time-picker-input:hover {
+  border-color: #9CA3AF;
+}
+
+.time-picker-input:focus {
+  border-color: #6366F1;
+  border-width: 2px;
+  outline: none;
+}
+
+/* 選單樣式 */
+.time-picker-popover {
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.time-picker-list {
+  padding: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.time-picker-item {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #111827;
+}
+
+.time-picker-item:hover {
+  background-color: #F3F4F6;
+}
+
+.time-picker-duration {
+  color: #6B7280;
+  font-size: 14px;
+}
+
+/* Action Item Editor 相關樣式 */
+.action-item-editor {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.action-item-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
 }
