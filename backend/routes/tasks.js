@@ -67,4 +67,32 @@ router.delete('/:taskId', async (req, res) => {
   }
 });
 
+// 更新任務
+router.put('/:taskId', async (req, res) => {
+  try {
+    const { name, color, isDefault } = req.body;
+    const task = await Task.findByIdAndUpdate(
+      req.params.taskId,
+      { name, color, isDefault },
+      { new: true }
+    );
+    if (!task) {
+      return res.status(404).json({ message: '找不到該任務' });
+    }
+    res.json(task);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// 獲取預設任務
+router.get('/default', async (req, res) => {
+  try {
+    const defaultTask = await Task.findOne({ isDefault: true });
+    res.json(defaultTask);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router; 

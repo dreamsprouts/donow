@@ -162,4 +162,37 @@ router.put('/actions/:id/task', async (req, res) => {
   }
 });
 
+// 獲取特定日期的計時記錄
+router.get('/actions/date/:date', async (req, res) => {
+  try {
+    const date = new Date(req.params.date);
+    const nextDate = new Date(date);
+    nextDate.setDate(date.getDate() + 1);
+
+    const actions = await Action.find({
+      systemStartTime: {
+        $gte: date,
+        $lt: nextDate
+      }
+    }).populate('task').sort({ systemStartTime: -1 });
+    
+    res.json(actions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// 獲取最近的計時記錄
+router.get('/actions/recent', async (req, res) => {
+  try {
+    const actions = await Action.find()
+      .populate('task')
+      .sort({ systemStartTime: -1 })
+      .limit(10);
+    res.json(actions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;
