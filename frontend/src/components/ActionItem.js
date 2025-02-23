@@ -3,7 +3,7 @@ import { format, differenceInSeconds } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { Box, Typography } from '@mui/material';
 
-const ActionItem = ({ action, onDelete, onNoteUpdate, onEdit }) => {
+const ActionItem = ({ action, onDelete, onNoteUpdate, onEdit, disabled }) => {
   const [inputValue, setInputValue] = useState(action.note);
   const [isComposing, setIsComposing] = useState(false);
 
@@ -66,57 +66,58 @@ const ActionItem = ({ action, onDelete, onNoteUpdate, onEdit }) => {
   };
 
   return (
-    <div className="action-item">
-      <Box 
-        onClick={() => onEdit(action)} 
-        className="action-item-box"
-      >
-        <div className="action-content">
-          <div className="action-time">
-            <span className="action-time-range">
-              {formatDate(action.userStartTime || action.startTime)} - 
-              {action.userEndTime || action.endTime ? 
-                format(new Date(action.userEndTime || action.endTime), 'HH:mm') : 
-                '--:--'}
-            </span>
-            <span className="duration">
-              {formatTime(
-                action.userStartTime || action.startTime,
-                action.userEndTime || action.endTime
-              )}
-            </span>
-          </div>
-          
-          {action.task && (
-            <div 
-              className="task-tag"
-              style={{ backgroundColor: action.task.color }}
-            >
-              {action.task.name}
-            </div>
-          )}
-          
-          <input
-            type="text"
-            value={inputValue}
-            onChange={handleNoteChange}
-            onCompositionStart={handleCompositionStart}
-            onCompositionEnd={handleCompositionEnd}
-            onBlur={handleBlur}
-            className="note-input history-note"
-            onClick={(e) => e.stopPropagation()}
-          />
-          
-          <button
-            className="delete-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(action._id);
-            }}
-          >
-            ×
-          </button>
+    <div 
+      className="action-item"
+      onClick={() => !disabled && onEdit(action)}
+      data-disabled={disabled}
+    >
+      <Box className="action-content">
+        <div className="action-time">
+          <span className="action-time-range">
+            {formatDate(action.userStartTime || action.startTime)} - 
+            {action.userEndTime || action.endTime ? 
+              format(new Date(action.userEndTime || action.endTime), 'HH:mm') : 
+              '--:--'}
+          </span>
+          <span className="duration">
+            {formatTime(
+              action.userStartTime || action.startTime,
+              action.userEndTime || action.endTime
+            )}
+          </span>
         </div>
+        
+        {action.task && (
+          <div 
+            className="task-tag"
+            style={{ backgroundColor: action.task.color }}
+          >
+            {action.task.name}
+          </div>
+        )}
+        
+        <input
+          type="text"
+          value={inputValue}
+          onChange={handleNoteChange}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
+          onBlur={handleBlur}
+          className="note-input history-note"
+          disabled={disabled}
+          onClick={(e) => e.stopPropagation()}
+        />
+        
+        <button
+          className="delete-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!disabled) onDelete(action._id);
+          }}
+          disabled={disabled}
+        >
+          ×
+        </button>
       </Box>
     </div>
   );

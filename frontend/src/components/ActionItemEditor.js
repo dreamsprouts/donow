@@ -91,102 +91,76 @@ const ActionItemEditor = ({ action, onClose, onSave }) => {
   }, []);
 
   return (
-    <Box
-      role="dialog"
-      aria-modal="true"
-      sx={{ 
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: '100%',
-        maxWidth: 600,
-        bgcolor: 'white',
-        borderRadius: 2,
-        p: 3,
-        boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.1)',
-        zIndex: 1000,
-      }}
-    >
-      {/* Header */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" sx={{ fontSize: '2rem', fontWeight: 'bold' }}>
-          {duration}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+    <>
+      <div className="editor-overlay" onClick={onClose} />
+      <div className="editor-container" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="editor-header">
+          <div className="editor-duration">
+            {duration}
+          </div>
           <IconButton 
             onClick={onClose}
-            sx={{ color: '#6B7280' }}
+            className="editor-close-btn"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M16 16L4 4M16 4L4 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </IconButton>
-        </Box>
-      </Stack>
+        </div>
 
-      {/* Task Selection Area */}
-      <Box sx={{ mb: 3 }} className="task-selector-container">
-        <TaskSelector 
-          onTaskSelect={handleEditorTaskSelect}
-          defaultValue={selectedTask || action.task}
-          context="editor"  // 加上標識
-        />
-      </Box>
+        {/* Task Selection */}
+        <div className="editor-section task-selector-container">
+          <TaskSelector 
+            onTaskSelect={handleEditorTaskSelect}
+            defaultValue={selectedTask || action.task}
+            context="editor"
+          />
+        </div>
 
-      {/* Time Range Picker */}
-      <Box sx={{ mb: 3 }}>
-        <TimeRangePicker
-          date={date}
-          startTime={startTime}
-          endTime={endTime}
-          onDateChange={handleDateChange}
-          onStartTimeChange={setStartTime}
-          onEndTimeChange={setEndTime}
-        />
-      </Box>
+        {/* Time Range Picker */}
+        <div className="editor-section" onClick={(e) => e.stopPropagation()}>
+          <TimeRangePicker
+            date={date}
+            startTime={startTime}
+            endTime={endTime}
+            onDateChange={handleDateChange}
+            onStartTimeChange={setStartTime}
+            onEndTimeChange={setEndTime}
+          />
+        </div>
 
-      {/* Notes */}
-      <Stack direction="row" spacing={1} alignItems="center" mb={3}>
-        <Box component="span" sx={{ color: '#6B7280', display: 'flex' }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M4 5H16M4 10H16M4 15H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </Box>
-        <input
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Add notes..."
-          style={{
-            width: '100%',
-            border: 'none',
-            outline: 'none',
-            fontSize: '0.95rem',
-            color: '#111827',
-            background: 'transparent',
-          }}
-        />
-      </Stack>
+        {/* Notes */}
+        <div className="editor-section">
+          <div className="editor-note-container">
+            <span className="editor-note-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13 1H3C2.44772 1 2 1.44772 2 2V14C2 14.5523 2.44772 15 3 15H13C13.5523 15 14 14.5523 14 14V2C14 1.44772 13.5523 1 13 1Z" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M5 5H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M5 8H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M5 11H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </span>
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add notes..."
+              className="editor-note-input"
+            />
+          </div>
+        </div>
 
-      {/* Save Button */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button 
-          variant="contained"
-          sx={{ 
-            bgcolor: '#6366F1',
-            borderRadius: '0.5rem',
-            px: 4,
-            py: 1,
-            '&:hover': {
-              bgcolor: '#4F46E5'
-            }
-          }}
-          onClick={handleSave}
-        >
-          SAVE
-        </Button>
-      </Box>
-    </Box>
+        {/* Save Button */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button 
+            className="editor-save-btn"
+            onClick={handleSave}
+          >
+            送出
+          </button>
+        </div>
+      </div>
+    </>
   );
 };
 
