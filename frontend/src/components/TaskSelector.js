@@ -15,7 +15,7 @@ import { fetchTasks, createTask, deleteTask } from '../services/taskService';
 
 const filter = createFilterOptions();
 
-const TaskSelector = ({ onTaskSelect, defaultValue, context }) => {
+const TaskSelector = ({ onTaskSelect, defaultValue, context, disabled }) => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -153,6 +153,7 @@ const TaskSelector = ({ onTaskSelect, defaultValue, context }) => {
       <Autocomplete
         value={defaultValue}
         onChange={handleChange}
+        disabled={disabled}
         inputValue={inputValue}
         onInputChange={(event, newInputValue) => {
           setInputValue(newInputValue);

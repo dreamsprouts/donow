@@ -45,19 +45,32 @@ body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  height: 100vh;
+  overflow: hidden;
 }
 
 h1 {
   color: var(--primary-color);
-  font-size: 1.6rem;
+  font-size: 1rem;
   padding: 1rem;
   margin: 0;
   background: var(--gray-50);
+  position: relative;
+  width: 100vw;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 32px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .timer-container {
-  background: var(--gray-50);
-  padding: 1rem;
+  background: #fff;
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  margin-bottom: 2rem;
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
@@ -66,6 +79,10 @@ h1 {
   position: sticky;
   top: 0;
   z-index: 2;
+  width: calc(100% - 2rem);
+  max-width: 850px;
+  margin: 1rem auto;
+  box-sizing: border-box;
 }
 
 .timer {
@@ -110,9 +127,7 @@ button:focus {
 
 .current-note {
   width: 100%;
-  max-width: 400px;
-  padding: 0 1rem;
-  margin-top: -0.5rem;
+  max-width: 600px;  /* 增加最大寬度 */
 }
 
 /* 輸入框基本樣式 */
@@ -144,11 +159,8 @@ button:focus {
 /* Timer 區域的輸入框特殊樣式 */
 .current-note-input {
   width: 100%;
-  max-width: 400px;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;  /* 垂直置中 */
-  justify-content: center;  /* 水平置中 */
+  font-size: 0.9rem;
+  color: var(--gray-500);
 }
 
 /* 輸入框的 placeholder 樣式 */
@@ -176,14 +188,26 @@ button:focus {
 
 .action-item {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1.2rem;
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
+  background: #fff;
   border-radius: var(--border-radius);
-  box-shadow: var(--shadow-sm);
+  margin-bottom: 0;
+  padding: 19.2px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* 禁用狀態的視覺提示 */
+.action-item[data-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.action-item[data-disabled="true"]:hover {
+  background-color: rgba(0, 0, 0, 0.02);  /* 非常淡的灰色 */
+}
+
+/* 一般狀態的 hover 效果 */
+.action-item:hover {
+  background-color: var(--gray-50);
 }
 
 .action-content {
@@ -275,25 +299,41 @@ button:focus {
 }
 
 /* 刪除按鈕 */
-.delete-btn {
-  color: #6B7280;
+.delete-button {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
   background: transparent;
   border: none;
-  padding: 0.5rem;
+  color: var(--gray-400);
+  font-size: 1.25rem;
+  padding: 0.25rem;
+  line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s;
+  transition: color 0.2s ease;
 }
 
-.action-item:hover .delete-btn {
-  opacity: 1;
+.delete-button:hover {
+  color: var(--gray-600);
 }
 
-.delete-btn:hover {
-  color: var(--primary-color);
+.delete-button:disabled {
+  color: var(--gray-300);
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: transparent;  /* 確保禁用時也不會有背景 */
+}
+
+/* RWD 調整 */
+@media (max-width: 768px) {
+  .delete-button {
+    top: 0.5rem;
+    transform: none;
+  }
 }
 
 /* 移除之前的一些動畫效果，讓界面更簡潔 */
@@ -335,17 +375,61 @@ button:focus {
 /* 移動端適配 */
 @media (max-width: 768px) {
   .action-content {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
   }
-  
-  .time-range {
-    flex-direction: column;
-    align-items: flex-start;
+
+  .action-time {
+    flex: 0 0 100%;
+    display: flex;
+    justify-content: space-between;
   }
-  
-  .duration {
-    margin-left: 0;
+
+  .task-tag {
+    order: 2;
+  }
+
+  .note-input.history-note {
+    order: 3;
+    min-width: 200px;
+  }
+
+  .delete-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .action-content {
+    gap: 0.75rem;
+  }
+
+  .task-tag {
+    flex: 0 0 100%;
+  }
+
+  .note-input.history-note {
+    flex: 0 0 100%;
+  }
+
+  .timer-container {
+    width: calc(100% - 1rem);
+    margin: 0.5rem auto;
+    padding: 1rem;
+  }
+
+  .current-note .MuiBox-root {
+    flex-direction: column;
+    gap: 1rem !important;
+  }
+
+  /* TaskSelector 和 note 統一左右間距 */
+  .current-note .MuiAutocomplete-root,
+  .note-input.current-note-input {
+    width: calc(100% - 2rem) !important;
+    margin: 0 1rem;
   }
 }
 
@@ -359,37 +443,37 @@ button:focus {
   text-overflow: ellipsis;
 }
 
+/* History 區域基礎樣式 */
 .history {
-  padding: 2rem 1rem;
-  max-width: 800px;
+  padding: 0.5rem;
+  max-width: 850px;
   margin: 0 auto;
-  width: 100%;
+  width: calc(100% - 1rem);
+  box-sizing: border-box;
+  height: calc(100vh - 400px); /* 扣掉 Timer 區域的高度 */
+  overflow-y: auto;
 }
 
-.history h2 {
-  color: var(--text-color);
-  margin-bottom: 1.5rem;
-  text-align: left;
+.history > h2 {
+  display: none;
 }
 
 .history-list {
-  max-height: calc(100vh - 300px);
+  height: 100%;
   overflow-y: auto;
-  border-radius: var(--border-radius);
-  background: #f9f9f9;
 }
 
 /* 美化滾動條 */
-.history-list::-webkit-scrollbar {
+.history::-webkit-scrollbar {
   width: 8px;
 }
 
-.history-list::-webkit-scrollbar-track {
+.history::-webkit-scrollbar-track {
   background: var(--gray-100);
   border-radius: 4px;
 }
 
-.history-list::-webkit-scrollbar-thumb {
+.history::-webkit-scrollbar-thumb {
   background: var(--gray-300);
   border-radius: 4px;
 }
@@ -405,13 +489,10 @@ button:focus {
   font-size: 0.95em;
 }
 
+/* 平板版型 */
 @media (max-width: 768px) {
-  .timer-container {
-    padding: 1.5rem;
-  }
-  
   .history {
-    padding: 1rem;
+    height: calc(100vh - 350px);
   }
   
   h1 {
@@ -430,6 +511,31 @@ button:focus {
   
   .history-note {
     width: 100%;
+  }
+}
+
+/* 手機版型 */
+@media (max-width: 480px) {
+  .history {
+    height: calc(100vh - 300px);
+  }
+  
+  .timer-container {
+    width: calc(100% - 1rem);
+    margin: 0.5rem auto;
+    padding: 1rem;
+  }
+
+  .current-note .MuiBox-root {
+    flex-direction: column;
+    gap: 1rem !important;
+  }
+
+  /* TaskSelector 和 note 統一左右間距 */
+  .current-note .MuiAutocomplete-root,
+  .note-input.current-note-input {
+    width: calc(100% - 2rem) !important;
+    margin: 0 1rem;
   }
 }
 
@@ -577,44 +683,110 @@ button:focus {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 100%;
+  width: calc(100% - 2rem);
   max-width: 600px;
-  background: var(--gray-50);
+  background: white;
   border-radius: var(--border-radius-lg);
-  padding: var(--spacing-8);
+  padding: 1.5rem;
   box-shadow: var(--shadow-lg);
   z-index: 1000;
+  box-sizing: border-box;
 }
 
-.action-item-editor {
-  background: var(--gray-50);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-}
-
-.action-item-editor-header {
+.editor-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-4);
-  border-bottom: 1px solid var(--gray-200);
+  margin-bottom: 1.5rem;
+  padding: 0 24px;  /* 加上左右 padding */
 }
 
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
+.editor-duration {
+  font-size: 2.5rem;
+  font-weight: 500;
+  color: var(--primary-color);
 }
 
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--primary-color);
+.editor-close-btn {
+  color: var(--gray-500);
+  background: transparent;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.editor-section {
+  padding: 0 24px;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.editor-note-container {
+  position: relative;
+  width: 100%;  /* 移除之前的 calc，讓它跟隨父元素的 padding */
+}
+
+.editor-note-icon {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
   display: flex;
   align-items: center;
-  justify-content: center;
+  padding-left: 0.75rem;
+}
+
+/* 編輯器的 note input 樣式 */
+.editor-note-input {
+  width: 100%;
+  padding: 12px 12px 12px 40px;  /* 左邊留更多空間給 icon */
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius);
+  font-size: 0.95rem;
+  color: var(--gray-900);
+  background: var(--gray-50);
+  box-sizing: border-box;
+  outline: none;
+}
+
+.editor-note-input:focus {
+  border-color: var(--secondary-color);
+}
+
+/* 覆蓋 MUI 的樣式 */
+.editor-note-input.MuiInputBase-root {
+  padding: 12px 12px 12px 40px !important;
+  background: var(--gray-50) !important;
+}
+
+.editor-note-input.MuiInputBase-root .MuiInputBase-input {
+  padding: 0 !important;
+  height: auto !important;
+}
+
+.editor-save-btn {
+  background-color: var(--secondary-color);
   color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 2rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.editor-save-btn:hover {
+  background-color: var(--primary-color);
+}
+
+/* 響應式調整 */
+@media (max-width: 480px) {
+  .editor-container {
+    width: calc(100% - 1rem);
+    padding: 1rem;
+  }
 }
 
 /* TimeRangePicker 相關樣式 */
@@ -677,10 +849,11 @@ button:focus {
 }
 
 .time-options {
-  overflow: hidden;
   width: 100%;
-  position: relative;
-  margin: 0 32px;
+  overflow-x: auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
 }
 
 .time-options-scroll {
@@ -768,4 +941,65 @@ button:focus {
   font-size: 0.875rem;
   font-weight: 500;
   text-align: center;
+}
+
+/* TaskSelector 和 note 的容器 */
+.current-note .MuiBox-root {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  width: 100%;
+}
+
+/* TaskSelector 的寬度限制 */
+.current-note .MuiAutocomplete-root {
+  width: 200px !important;  /* 固定寬度 */
+  flex-shrink: 0;  /* 防止壓縮 */
+}
+
+/* TimeRangePicker 響應式樣式 */
+@media (max-width: 768px) {
+  .time-range-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .time-range-date {
+    width: 100%;
+  }
+
+  .time-range-picker {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* 禁用狀態的樣式 */
+.action-item input:disabled {
+  background: transparent;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.delete-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.action-item-overlay.disabled {
+  cursor: not-allowed;
+  background: transparent;  /* 移除禁用時的灰色背景 */
+}
+
+/* 如果需要視覺提示，可以用更微妙的方式 */
+.action-item-overlay.disabled:hover {
+  background: rgba(0, 0, 0, 0.02);  /* 非常淡的灰色 */
+}
+
+/* 在 RWD 時才加入間距 */
+@media (max-width: 768px) {
+  .action-item {
+    margin-bottom: 8px;  /* 手機版才需要間距 */
+  }
 }

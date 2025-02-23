@@ -143,6 +143,10 @@ function App() {
     fetchActions();
   }, []);
 
+  useEffect(() => {
+    document.title = 'DoNow';
+  }, []);
+
   const handleApiError = (error, message) => {
     console.error(message, error);
     // 可以加入錯誤提示 UI
@@ -329,7 +333,7 @@ function App() {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={zhTW}>
       <div className="App">
-        <h1>番茄鐘</h1>
+        <h1>DoNow</h1>
         
         <div className="timer-container">
           <div className="time-options-container">
@@ -376,7 +380,8 @@ function App() {
               <TaskSelector 
                 onTaskSelect={handleTimerTaskSelect}
                 defaultValue={selectedTask}
-                context="timer"  // 加上標識
+                context="timer"
+                disabled={isActive}
               />
               <input
                 type="text"
@@ -408,10 +413,11 @@ function App() {
                   <ActionItem
                     key={action._id}
                     action={action}
-                    onDelete={deleteAction}
+                    onEdit={() => handleEdit(action)}
+                    onDelete={() => deleteAction(action._id)}
                     onNoteUpdate={updateNote}
                     onTimeUpdate={handleTimeUpdate}
-                    onEdit={handleEdit}
+                    disabled={isActive}
                   />
                 ))}
               </div>
