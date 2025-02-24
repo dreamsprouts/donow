@@ -5,10 +5,13 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { zhTW } from 'date-fns/locale';
 import ActionItem from './components/ActionItem';
 import ActionItemEditor from './components/ActionItemEditor';
-import { Box } from '@mui/material';
+import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import TaskTester from './components/TaskTester';
 import TaskSelector from './components/TaskSelector';
 import { updateActionTask } from './services/taskService';  // 修正路徑
+import HabitMode from './components/HabitMode';
+import TimerIcon from '@mui/icons-material/Timer';
+import RepeatIcon from '@mui/icons-material/Repeat';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
@@ -32,6 +35,7 @@ function App() {
   const scrollRef = useRef(null);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [mode, setMode] = useState('timer'); // 'timer' 或 'habit'
 
   // 先定義 fetchActions
   const fetchActions = async () => {
@@ -330,101 +334,158 @@ function App() {
     container.style.transform = `translateX(-${newPosition}px)`;
   };
 
+  const handleModeChange = async (event, newMode) => {
+    if (newMode !== null) {
+      setMode(newMode);
+      // 當切換回 timer 模式時重新載入資料
+      if (newMode === 'timer') {
+        await fetchActions();
+      }
+    }
+  };
+
+  // 初始載入和定期更新
+  useEffect(() => {
+    if (mode === 'timer') {
+      fetchActions();
+      
+      // 如果正在計時，設置定期更新
+      const interval = setInterval(() => {
+        if (isActive) {
+          fetchActions();
+        }
+      }, 30000); // 每 30 秒更新一次
+
+      return () => clearInterval(interval);
+    }
+  }, [mode, isActive]);
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={zhTW}>
       <div className="App">
-        <h1>DoNow</h1>
-        
-        <div className="timer-container">
-          <div className="time-options-container">
-            <button 
-              className="scroll-btn"
-              onClick={() => handleScroll('left')}
-              disabled={isActive || scrollPosition === 0}
-              style={{ outline: 'none' }}
-            >
-              <span style={{ userSelect: 'none' }}>‹</span>
-            </button>
-            
-            <div className="time-options">
-              <div className="time-options-scroll" ref={scrollRef}>
-                {TIME_OPTIONS.map(minutes => (
-                  <button
-                    key={minutes}
-                    onClick={() => handleTimeSelect(minutes)}
-                    className={`time-option-btn ${selectedTime === minutes ? 'selected' : ''}`}
-                    disabled={isActive}
-                  >
-                    {minutes}m
-                  </button>
-                ))}
+        {/* Mode Switcher */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center',
+          mb: 2,
+          mt: 2 
+        }}>
+          <ToggleButtonGroup
+            value={mode}
+            exclusive
+            onChange={handleModeChange}
+            aria-label="mode selector"
+            size="small"
+          >
+            <ToggleButton value="timer" aria-label="timer mode">
+              <TimerIcon sx={{ mr: 1 }} />
+              專注
+            </ToggleButton>
+            <ToggleButton value="habit" aria-label="habit mode">
+              <RepeatIcon sx={{ mr: 1 }} />
+              習慣
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        {/* Content */}
+        <Box sx={{ display: mode === 'timer' ? 'block' : 'none' }}>
+          <div className="timer-container">
+            <div className="time-options-container">
+              <button 
+                className="scroll-btn"
+                onClick={() => handleScroll('left')}
+                disabled={isActive || scrollPosition === 0}
+                style={{ outline: 'none' }}
+              >
+                <span style={{ userSelect: 'none' }}>‹</span>
+              </button>
+              
+              <div className="time-options">
+                <div className="time-options-scroll" ref={scrollRef}>
+                  {TIME_OPTIONS.map(minutes => (
+                    <button
+                      key={minutes}
+                      onClick={() => handleTimeSelect(minutes)}
+                      className={`time-option-btn ${selectedTime === minutes ? 'selected' : ''}`}
+                      disabled={isActive}
+                    >
+                      {minutes}m
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <button 
+                className="scroll-btn"
+                onClick={() => handleScroll('right')}
+                disabled={isActive || scrollPosition >= (scrollRef.current?.scrollWidth - scrollRef.current?.parentElement.offsetWidth || 0)}
+                style={{ outline: 'none' }}
+              >
+                <span style={{ userSelect: 'none' }}>›</span>
+              </button>
             </div>
 
-            <button 
-              className="scroll-btn"
-              onClick={() => handleScroll('right')}
-              disabled={isActive || scrollPosition >= (scrollRef.current?.scrollWidth - scrollRef.current?.parentElement.offsetWidth || 0)}
-              style={{ outline: 'none' }}
-            >
-              <span style={{ userSelect: 'none' }}>›</span>
-            </button>
+            <div className="timer">
+              {formatDisplayTime(time)}
+            </div>
+            
+            <div className="current-note">
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+                <TaskSelector 
+                  onTaskSelect={handleTimerTaskSelect}
+                  defaultValue={selectedTask}
+                  context="timer"
+                  disabled={isActive}
+                />
+                <input
+                  type="text"
+                  value={currentNote}
+                  onChange={(e) => setCurrentNote(e.target.value)}
+                  placeholder="專注一段時間..."
+                  className="note-input current-note-input"
+                  disabled={isActive}
+                />
+              </Box>
+            </div>
+
+            <div className="controls">
+              {!isActive ? (
+                <button className="start-btn" onClick={startTimer}>開始</button>
+              ) : (
+                <button className="end-btn" onClick={handleComplete}>結束</button>
+              )}
+            </div>
           </div>
 
-          <div className="timer">
-            {formatDisplayTime(time)}
+          <div className="history">
+            <h2>歷史記錄</h2>
+            <div className="history-list">
+              {Object.entries(groupActionsByDate(actions)).map(([date, dateActions]) => (
+                <div key={date} className="date-group">
+                  <div className="date-header">{date}</div>
+                  {dateActions.map(action => (
+                    <ActionItem
+                      key={action._id}
+                      action={action}
+                      onEdit={() => handleEdit(action)}
+                      onDelete={() => deleteAction(action._id)}
+                      onNoteUpdate={updateNote}
+                      onTimeUpdate={handleTimeUpdate}
+                      disabled={isActive}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
-          
-          <div className="current-note">
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
-              <TaskSelector 
-                onTaskSelect={handleTimerTaskSelect}
-                defaultValue={selectedTask}
-                context="timer"
-                disabled={isActive}
-              />
-              <input
-                type="text"
-                value={currentNote}
-                onChange={(e) => setCurrentNote(e.target.value)}
-                placeholder="專注一段時間..."
-                className="note-input current-note-input"
-                disabled={isActive}
-              />
-            </Box>
-          </div>
+        </Box>
 
-          <div className="controls">
-            {!isActive ? (
-              <button className="start-btn" onClick={startTimer}>開始</button>
-            ) : (
-              <button className="end-btn" onClick={handleComplete}>結束</button>
-            )}
-          </div>
-        </div>
+        <Box sx={{ display: mode === 'habit' ? 'block' : 'none' }}>
+          <HabitMode />
+        </Box>
 
-        <div className="history">
-          <h2>歷史記錄</h2>
-          <div className="history-list">
-            {Object.entries(groupActionsByDate(actions)).map(([date, dateActions]) => (
-              <div key={date} className="date-group">
-                <div className="date-header">{date}</div>
-                {dateActions.map(action => (
-                  <ActionItem
-                    key={action._id}
-                    action={action}
-                    onEdit={() => handleEdit(action)}
-                    onDelete={() => deleteAction(action._id)}
-                    onNoteUpdate={updateNote}
-                    onTimeUpdate={handleTimeUpdate}
-                    disabled={isActive}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-
+        {/* Editor Modal */}
         {isEditorOpen && (
           <>
             <div 

@@ -5,14 +5,36 @@ const connectDB = require('./config/db');
 const mongoose = require('mongoose');
 const tasksRouter = require('./routes/tasks');
 const https = require('https');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 dotenv.config();
 
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: ['https://donow.futurin.tw', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+app.use(helmet({
+  contentSecurityPolicy: false,  // 如果前端需要載入外部資源，可以關閉
+  crossOriginEmbedderPolicy: false
+}));
+app.use(express.json({ limit: '10kb' }));
+
+// 在其他 middleware 之前加入
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 分鐘
+  max: 500, // 調整為 500 次
+  message: {
+    message: '請求太頻繁，請稍後再試',
+    waitTime: '15分鐘'
+  }
+});
+
+app.use('/api/', limiter);  // 只限制 API 路由
 
 // 請求日誌中間件
 app.use((req, res, next) => {
@@ -59,6 +81,19 @@ app.get('/', (req, res) => {
   });
 });
 
+// 加入 API 路徑說明
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'DoNow API 文件',
+    endpoints: {
+      tasks: '/api/tasks',
+      timer: '/api/timer',
+      health: '/api/health'
+    },
+    version: '0.4.1'
+  });
+});
+
 // 加入 mongoose 連線狀態檢查
 app.get('/api/health', async (req, res) => {
   try {
@@ -90,6 +125,16 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// 在所有路由之後，錯誤處理中間件之前加入
+app.use((req, res) => {
+  console.log(`${new Date().toISOString()} 404 錯誤: ${req.method} ${req.path}`);
+  res.status(404).json({
+    message: '找不到該路徑',
+    path: req.path,
+    method: req.method
+  });
+});
+
 // 錯誤處理中間件
 app.use((err, req, res, next) => {
   console.error(`${new Date().toISOString()} 錯誤:`, err);
@@ -108,23 +153,22 @@ const server = app.listen(PORT, () => {
 // 優雅關閉處理
 const gracefulShutdown = async () => {
   console.log(`${new Date().toISOString()} 正在關閉服務器...`);
-  server.close(async () => {
-    console.log(`${new Date().toISOString()} HTTP 伺服器已關閉`);
-    try {
-      await mongoose.connection.close();
-      console.log(`${new Date().toISOString()} MongoDB 連接已關閉`);
-      process.exit(0);
-    } catch (err) {
-      console.error(`${new Date().toISOString()} 關閉 MongoDB 連接時發生錯誤:`, err);
-      process.exit(1);
-    }
-  });
-
-  // 如果 10 秒內無法正常關閉，強制退出
-  setTimeout(() => {
-    console.error(`${new Date().toISOString()} 無法在時限內正常關閉，強制退出`);
+  
+  try {
+    await new Promise((resolve) => {
+      server.close(() => {
+        console.log(`${new Date().toISOString()} HTTP 伺服器已關閉`);
+        resolve();
+      });
+    });
+    
+    await mongoose.connection.close();
+    console.log(`${new Date().toISOString()} MongoDB 連接已關閉`);
+    process.exit(0);
+  } catch (err) {
+    console.error(`${new Date().toISOString()} 關閉時發生錯誤:`, err);
     process.exit(1);
-  }, 10000);
+  }
 };
 
 process.on('SIGTERM', gracefulShutdown);

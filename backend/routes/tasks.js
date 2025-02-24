@@ -4,10 +4,13 @@ const Task = require('../models/Task');
 const { migrateActions } = require('../scripts/migrateActions');
 const Action = require('../models/Timer');
 
-// 取得所有任務
+// 取得所有任務（加入 type 過濾）
 router.get('/', async (req, res) => {
   try {
-    const tasks = await Task.find();
+    const { type } = req.query;
+    const query = type ? { type } : {};
+    
+    const tasks = await Task.find(query);
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -16,11 +19,13 @@ router.get('/', async (req, res) => {
 
 // 建立新任務
 router.post('/', async (req, res) => {
-  const task = new Task({
-    name: req.body.name
-  });
-
   try {
+    const task = new Task({
+      name: req.body.name,
+      type: req.body.type || 'project',
+      dailyGoal: req.body.dailyGoal
+    });
+
     const newTask = await task.save();
     res.status(201).json(newTask);
   } catch (error) {

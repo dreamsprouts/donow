@@ -54,3 +54,5 @@ coverage/
 
 # Yarn Integrity file
 .yarn-integrity
+backend/.env
+backend/node_modules

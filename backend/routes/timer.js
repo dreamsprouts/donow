@@ -3,10 +3,13 @@ const router = express.Router();
 const Action = require('../models/Timer');
 const Task = require('../models/Task');
 
-// 獲取所有計時記錄
+// 獲取所有計時記錄（加入 type 過濾）
 router.get('/actions', async (req, res) => {
   try {
-    const actions = await Action.find()
+    const { type } = req.query;
+    const query = type ? { type } : {};
+    
+    const actions = await Action.find(query)
       .populate('task')
       .sort({ systemStartTime: -1 });
     res.json(actions);
@@ -192,6 +195,40 @@ router.get('/actions/recent', async (req, res) => {
     res.json(actions);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// 新增 habit 記錄
+router.post('/habit', async (req, res) => {
+  try {
+    const { taskId, note, startTime } = req.body;
+    const systemStartTime = startTime || new Date();
+    
+    const action = new Action({
+      startTime: systemStartTime,
+      endTime: systemStartTime,
+      userStartTime: systemStartTime,
+      userEndTime: systemStartTime,
+      note: note || '完成習慣',
+      task: taskId,
+      type: 'habit',
+      isCompleted: true
+    });
+    
+    const newAction = await action.save();
+    const populatedAction = await Action.findById(newAction._id)
+      .populate('task')
+      .lean();  // 使用 lean() 來獲取純 JavaScript 物件
+      
+    // 計算當日進度
+    const progress = await action.goalProgress;
+    
+    res.status(201).json({
+      ...populatedAction,
+      progress  // 加入進度資訊
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 

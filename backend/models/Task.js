@@ -17,6 +17,17 @@ const taskSchema = new mongoose.Schema({
   isDefault: {
     type: Boolean,
     default: false
+  },
+  type: {
+    type: String,
+    enum: ['project', 'habit'],
+    default: 'project'
+  },
+  dailyGoal: {
+    type: Number,
+    default: function() {
+      return this.type === 'habit' ? 10 : null;
+    }
   }
 });
 
