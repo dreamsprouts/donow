@@ -4,13 +4,15 @@ const Task = require('../models/Task');
 const { migrateActions } = require('../scripts/migrateActions');
 const Action = require('../models/Timer');
 
-// 取得所有任務（加入 type 過濾）
+// 取得所有任務（加入排序）
 router.get('/', async (req, res) => {
   try {
     const { type } = req.query;
     const query = type ? { type } : {};
     
-    const tasks = await Task.find(query);
+    const tasks = await Task.find(query)
+      .sort({ 'stats.totalActions': -1 }); // 依總行動次數降序排列
+    
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -75,10 +77,10 @@ router.delete('/:taskId', async (req, res) => {
 // 更新任務
 router.put('/:taskId', async (req, res) => {
   try {
-    const { name, color, isDefault } = req.body;
+    const { name, color, dailyGoal } = req.body;
     const task = await Task.findByIdAndUpdate(
       req.params.taskId,
-      { name, color, isDefault },
+      { name, color, dailyGoal },
       { new: true }
     );
     if (!task) {

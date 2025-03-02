@@ -1003,3 +1003,133 @@ button:focus {
     margin-bottom: 8px;  /* 手機版才需要間距 */
   }
 }
+
+/* TaskEditor 樣式 */
+.MuiDialog-paper {
+  border-radius: var(--border-radius-lg) !important;
+}
+
+.MuiDialogTitle-root {
+  font-size: 1.25rem !important;
+  font-weight: 500 !important;
+}
+
+/* 顏色選擇器容器 */
+.circle-picker {
+  margin: 0 !important;
+  justify-content: flex-start !important;
+  gap: 16px !important;
+}
+
+/* 顏色選擇器圓圈 */
+.circle-picker > span {
+  margin: 0 !important;
+}
+
+.circle-picker > span > div {
+  border: 2px solid transparent !important;
+  transition: all 0.2s ease !important;
+}
+
+.circle-picker > span > div:hover {
+  transform: scale(1.1) !important;
+}
+
+/* 輸入框樣式 */
+.MuiTextField-root .MuiOutlinedInput-root {
+  background-color: var(--gray-50);
+  border-radius: var(--border-radius);
+}
+
+.MuiTextField-root .MuiOutlinedInput-root:hover {
+  background-color: var(--gray-100);
+}
+
+/* 按鈕樣式 */
+.MuiDialogActions-root {
+  padding: 16px 24px !important;
+}
+
+.MuiButton-contained {
+  background-color: var(--secondary-color) !important;
+  border-radius: var(--border-radius) !important;
+}
+
+.MuiButton-contained:hover {
+  background-color: var(--primary-color) !important;
+}
+
+/* TaskCard 的進度條樣式 */
+.MuiLinearProgress-root {
+  background-color: var(--gray-100) !important;
+}
+
+.MuiLinearProgress-bar {
+  transition: transform 0.3s ease !important;
+}
+
+/* Habit 類型的 TaskCard 特殊樣式 */
+.task-card-habit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.task-card-streak {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+}
+
+.task-card-streak-divider {
+  color: var(--gray-400);
+  margin: 0 0.25rem;
+}
+
+.task-card-goal {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+}
+
+/* 響應式調整 */
+@media (max-width: 480px) {
+  .task-card-habit {
+    gap: 0.5rem;
+  }
+  
+  .task-card-goal {
+    font-size: 0.75rem;
+  }
+}
+
+/* 任務列表相關樣式 */
+.task-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.task-type-toggle {
+  margin: var(--spacing-4);
+}
+
+/* 響應式調整 */
+@media (max-width: 1176px) {
+  .App {
+    overflow-x: hidden;
+  }
+
+  .timer-container {
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .history {
+    width: 100%;
+    padding: var(--spacing-4);
+  }
+}

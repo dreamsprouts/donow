@@ -52,6 +52,10 @@ router.post('/start', async (req, res) => {
     const newAction = await action.save();
     const populatedAction = await Action.findById(newAction._id);
     res.status(201).json(populatedAction);
+
+    // 更新任務統計
+    const task = await Task.findById(actualTaskId);
+    await task.updateStats();
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -74,6 +78,10 @@ router.put('/end/:id', async (req, res) => {
     
     const updatedAction = await action.save();
     res.json(updatedAction);
+
+    // 更新任務統計
+    const task = await Task.findById(action.task);
+    await task.updateStats();
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -86,6 +94,10 @@ router.put('/note/:id', async (req, res) => {
     action.note = req.body.note;
     const updatedAction = await action.save();
     res.json(updatedAction);
+
+    // 更新任務統計
+    const task = await Task.findById(action.task);
+    await task.updateStats();
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -138,6 +150,10 @@ router.put('/time/:id', async (req, res) => {
     
     const updatedAction = await action.save();
     res.json(updatedAction);
+
+    // 更新任務統計
+    const task = await Task.findById(action.task);
+    await task.updateStats();
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -160,6 +176,10 @@ router.put('/actions/:id/task', async (req, res) => {
     }
 
     res.json(action);
+
+    // 更新任務統計
+    const task = await Task.findById(taskId);
+    await task.updateStats();
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -227,6 +247,10 @@ router.post('/habit', async (req, res) => {
       ...populatedAction,
       progress  // 加入進度資訊
     });
+
+    // 更新任務統計
+    const task = await Task.findById(taskId);
+    await task.updateStats();
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

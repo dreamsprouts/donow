@@ -90,4 +90,31 @@ export const fetchHabitActions = async () => {
     console.error('Error fetching habit actions:', error);
     throw error;
   }
+};
+
+export const updateTask = async (taskId, taskData) => {
+  try {
+    // 確保數字類型正確
+    if (taskData.dailyGoal) {
+      taskData.dailyGoal = Number(taskData.dailyGoal);
+    }
+    
+    const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(taskData),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '更新任務失敗');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating task:', error);
+    throw error;
+  }
 }; 
