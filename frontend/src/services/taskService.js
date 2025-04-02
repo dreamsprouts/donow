@@ -92,11 +92,11 @@ export const fetchHabitActions = async () => {
   }
 };
 
-export const updateTask = async (taskId, taskData) => {
+export const updateTask = async (taskId, updateData) => {
   try {
     // 確保數字類型正確
-    if (taskData.dailyGoal) {
-      taskData.dailyGoal = Number(taskData.dailyGoal);
+    if (updateData.dailyGoal) {
+      updateData.dailyGoal = Number(updateData.dailyGoal);
     }
     
     const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
@@ -104,14 +104,14 @@ export const updateTask = async (taskId, taskData) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(taskData),
+      body: JSON.stringify(updateData),
     });
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || '更新任務失敗');
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error('Error updating task:', error);

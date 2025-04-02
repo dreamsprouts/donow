@@ -77,12 +77,20 @@ router.delete('/:taskId', async (req, res) => {
 // 更新任務
 router.put('/:taskId', async (req, res) => {
   try {
-    const { name, color, dailyGoal } = req.body;
+    const { name, color, dailyGoal, project } = req.body;
+    const updateData = { name, color, dailyGoal };
+    
+    // 如果提供了 project，加入更新資料中
+    if (project !== undefined) {
+      updateData.project = project || null;  // 如果是空字串，設為 null
+    }
+
     const task = await Task.findByIdAndUpdate(
       req.params.taskId,
-      { name, color, dailyGoal },
+      updateData,
       { new: true }
     );
+
     if (!task) {
       return res.status(404).json({ message: '找不到該任務' });
     }

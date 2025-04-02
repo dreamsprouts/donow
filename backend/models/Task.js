@@ -35,6 +35,10 @@ const taskSchema = new mongoose.Schema({
     enum: ['project', 'habit'],
     default: 'project'
   },
+  project: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project'
+  },
   dailyGoal: {
     type: Number,
     default: function() {

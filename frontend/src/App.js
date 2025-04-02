@@ -5,7 +5,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { zhTW } from 'date-fns/locale';
 import ActionItem from './components/ActionItem';
 import ActionItemEditor from './components/ActionItemEditor';
-import { Box, ToggleButton, ToggleButtonGroup, IconButton, AppBar, Toolbar } from '@mui/material';
+import { Box, ToggleButton, ToggleButtonGroup, IconButton, AppBar, Toolbar, Typography } from '@mui/material';
 import TaskTester from './components/TaskTester';
 import TaskSelector from './components/TaskSelector';
 import { updateActionTask } from './services/taskService';  // 修正路徑
@@ -13,9 +13,11 @@ import HabitMode from './components/HabitMode';
 import TimerIcon from '@mui/icons-material/Timer';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import TaskManager from './components/TaskManager';
+import ProjectManager from './components/ProjectManager';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import MenuIcon from '@mui/icons-material/Menu';
+import FolderIcon from '@mui/icons-material/Folder';
 import { useMediaQuery } from '@mui/material';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
@@ -45,6 +47,7 @@ function App() {
   const isWideScreen = useMediaQuery('(min-width: 1176px)');
   const isMobile = useMediaQuery('(max-width: 768px)');
   const shouldOverlay = !isWideScreen;  // 新增這個判斷
+  const [isProjectMode, setIsProjectMode] = useState(false);
 
   // 先定義 fetchActions
   const fetchActions = async () => {
@@ -349,13 +352,17 @@ function App() {
     container.style.transform = `translateX(-${newPosition}px)`;
   };
 
-  const handleModeChange = async (event, newMode) => {
+  const handleModeChange = (event, newMode) => {
     if (newMode !== null) {
       setMode(newMode);
-      // 當切換回 timer 模式時重新載入資料
-      if (newMode === 'timer') {
-        await fetchActions();
-      }
+      setIsProjectMode(false); // 切換模式時關閉專案模式
+    }
+  };
+
+  const handleProjectModeToggle = () => {
+    setIsProjectMode(!isProjectMode);
+    if (!isProjectMode) {
+      setMode('timer'); // 進入專案模式時切換到計時器模式
     }
   };
 
@@ -386,15 +393,27 @@ function App() {
         {/* Header */}
         <AppBar position="static" color="transparent" elevation={0}>
           <Toolbar sx={{ justifyContent: 'space-between' }}>
-            <ToggleButtonGroup
-              value={mode}
-              exclusive
-              onChange={handleModeChange}
-              size="small"
-            >
-              <ToggleButton value="timer">專注</ToggleButton>
-              <ToggleButton value="habit">習慣</ToggleButton>
-            </ToggleButtonGroup>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ToggleButtonGroup
+                value={mode}
+                exclusive
+                onChange={handleModeChange}
+                size="small"
+              >
+                <ToggleButton value="timer">專注</ToggleButton>
+                <ToggleButton value="habit">習慣</ToggleButton>
+              </ToggleButtonGroup>
+
+              <IconButton 
+                onClick={handleProjectModeToggle}
+                sx={{ 
+                  display: { xs: 'none', md: 'flex' },
+                  color: isProjectMode ? 'primary.main' : 'inherit'
+                }}
+              >
+                <FolderIcon />
+              </IconButton>
+            </Box>
 
             <IconButton 
               onClick={handleTaskMenuToggle}
@@ -416,9 +435,18 @@ function App() {
           marginRight: !shouldOverlay && isTaskMenuOpen ? '400px' : 0,
           opacity: shouldOverlay && isTaskMenuOpen ? 0 : 1
         }}>
+          {/* Project Mode Content */}
+          <Box sx={{ 
+            display: isProjectMode ? 'block' : 'none',
+            opacity: isMobile && isTaskMenuOpen ? 0 : 1,
+            transition: 'opacity 0.3s ease'
+          }}>
+            <ProjectManager />
+          </Box>
+
           {/* Timer Mode Content */}
           <Box sx={{ 
-            display: mode === 'timer' ? 'block' : 'none',
+            display: mode === 'timer' && !isProjectMode ? 'block' : 'none',
             opacity: isMobile && isTaskMenuOpen ? 0 : 1,
             transition: 'opacity 0.3s ease'
           }}>
@@ -515,7 +543,7 @@ function App() {
 
           {/* Habit Mode Content */}
           <Box sx={{ 
-            display: mode === 'habit' ? 'block' : 'none',
+            display: mode === 'habit' && !isProjectMode ? 'block' : 'none',
             opacity: isMobile && isTaskMenuOpen ? 0 : 1,
             transition: 'opacity 0.3s ease'
           }}>

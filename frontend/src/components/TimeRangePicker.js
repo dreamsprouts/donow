@@ -257,15 +257,7 @@ const TimeRangePicker = ({ date = new Date(), startTime = new Date(), endTime, o
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Stack 
-        direction="row" 
-        spacing={2} 
-        alignItems="center"
-        className="time-range-container"
-        sx={{
-          flexWrap: { xs: 'wrap', md: 'nowrap' }
-        }}
-      >
+      <Stack direction="row" spacing={2} alignItems="center">
         {/* Time Icon */}
         <Box component="span" sx={{ 
           color: '#6B7280', 
@@ -285,13 +277,12 @@ const TimeRangePicker = ({ date = new Date(), startTime = new Date(), endTime, o
         {/* Date Picker Trigger */}
         <Box
           onClick={handleClick}
-          className="time-range-date"
           sx={{
             cursor: 'pointer',
             padding: '8px 16px',
             borderRadius: '4px',
             minWidth: '140px',
-            textAlign: 'left',
+            textAlign: 'left',  // 修改：文字靠左
             '&:hover': {
               bgcolor: '#F3F4F6'
             }
@@ -302,15 +293,39 @@ const TimeRangePicker = ({ date = new Date(), startTime = new Date(), endTime, o
           </Typography>
         </Box>
 
+        {/* Date Picker Popover */}
+        <Popover
+          open={open}
+          anchorEl={anchorEl}
+          onClose={handleClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'left',
+          }}
+        >
+          <StaticDatePicker
+            value={date}
+            onChange={handleDateChange}
+            slotProps={{
+              actionBar: {
+                actions: [],
+              },
+            }}
+          />
+        </Popover>
+
         {/* Time Range */}
         <Stack 
           direction="row" 
           spacing={1} 
           alignItems="center" 
-          className="time-range-picker"
           sx={{ 
             flex: 1,
-            justifyContent: { xs: 'flex-start', md: 'center' }
+            justifyContent: 'center'
           }}
         >
           <CustomTimePicker
@@ -330,28 +345,6 @@ const TimeRangePicker = ({ date = new Date(), startTime = new Date(), endTime, o
           />
         </Stack>
       </Stack>
-
-      {/* Date Picker Popover */}
-      <Popover
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-      >
-        <StaticDatePicker
-          value={date}
-          onChange={handleDateChange}
-          onAccept={() => setAnchorEl(null)}
-          onClose={() => setAnchorEl(null)}
-        />
-      </Popover>
     </Box>
   );
 };

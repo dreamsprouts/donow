@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const mongoose = require('mongoose');
 const tasksRouter = require('./routes/tasks');
+const projectsRouter = require('./routes/projects');
 const https = require('https');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -72,6 +73,7 @@ if (process.env.NODE_ENV === 'production') {
 // Routes
 app.use('/api/timer', require('./routes/timer'));
 app.use('/api/tasks', tasksRouter);
+app.use('/api/projects', projectsRouter);
 
 // 加入根路徑處理
 app.get('/', (req, res) => {
