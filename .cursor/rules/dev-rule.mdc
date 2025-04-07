@@ -1,0 +1,62 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Cursor Project Rules
+
+## 🧠 Session & Context
+
+Assume this is a continuation of a long-term project. 
+Do not assume a fresh start. Always ask for clarification if context is missing.
+
+## 📁 Project Structure
+
+- All frontend code is under the `/src` directory.
+- Components are located in `/src/components`.
+- Shared services (e.g. API handlers, utils) are under `/src/services`.
+- Pages are rendered via `App.js` or framework-specific routing (e.g. Next.js).
+
+Follow this structure when creating or referencing files. Do not create new directories unless necessary and justified.
+
+## 📦 Import & File Creation
+
+Before creating a new file or folder, always:
+- Check if a similar file already exists with the same purpose.
+- Prefer reusing existing modules/components/functions when applicable.
+- Use **relative import paths** only. Avoid making assumptions about aliases or autoloading.
+
+## 🧾 Type Safety & Parameter Handling
+
+- Always verify the data structure and type before use.
+- Pay special attention to fields like `id`, `slug`, `key`, or any field used as an identifier.
+  - These must be treated as **strings**, not numbers (avoid `parseInt()` or arithmetic).
+- If the data format is unclear, prompt the user to confirm.
+
+## 🧱 Naming & Consistency
+
+- Follow existing naming conventions in the current file or module.
+- Use camelCase for variables and PascalCase for components/functions.
+- Do not rename functions or variables across files unless instructed.
+
+## 🔧 Refactoring Rules
+
+- Do not refactor large code blocks unless explicitly instructed.
+- Provide suggestions for improvement instead of applying changes directly.
+
+## 🧑‍🤝‍🧑 Collaboration Awareness
+
+This project may be maintained by multiple agents or developers. You are responsible for contributing in a collaborative way:
+- Check for existing documentation files (`README.md`, `CONTRIBUTING.md`, `docs/`, `.cursor-notes.md`) before asking questions.
+- If you clarify any important assumptions, decisions, or logic during development, suggest updating relevant documentation files.
+- Examples of such information:
+  - Clarified data field types
+  - API response changes
+  - Parameter naming conventions
+  - Known bugs or compatibility notes
+
+## 💬 AI-Specific Notes
+
+- Do not invent new filenames or endpoints unless the user explicitly requests it.
+- Avoid speculative assumptions about code style or frameworks unless clearly observed in the current project.
+

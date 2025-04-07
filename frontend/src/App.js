@@ -5,7 +5,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { zhTW } from 'date-fns/locale';
 import ActionItem from './components/ActionItem';
 import ActionItemEditor from './components/ActionItemEditor';
-import { Box, ToggleButton, ToggleButtonGroup, IconButton, AppBar, Toolbar, Typography } from '@mui/material';
+import { Box, ToggleButton, ToggleButtonGroup, IconButton, AppBar, Toolbar, Typography, Tooltip } from '@mui/material';
 import TaskTester from './components/TaskTester';
 import TaskSelector from './components/TaskSelector';
 import { updateActionTask } from './services/taskService';  // 修正路徑
@@ -18,7 +18,9 @@ import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import MenuIcon from '@mui/icons-material/Menu';
 import FolderIcon from '@mui/icons-material/Folder';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import { useMediaQuery } from '@mui/material';
+import FocusTimer from './components/FocusTimer';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
@@ -48,6 +50,7 @@ function App() {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const shouldOverlay = !isWideScreen;  // 新增這個判斷
   const [isProjectMode, setIsProjectMode] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false); // 專注模式狀態
 
   // 先定義 fetchActions
   const fetchActions = async () => {
@@ -376,7 +379,7 @@ function App() {
         if (isActive) {
           fetchActions();
         }
-      }, 30000); // 每 30 秒更新一次
+      }, 10 * 60 * 1000); // 每 10 分鐘更新一次
 
       return () => clearInterval(interval);
     }
@@ -385,6 +388,13 @@ function App() {
   // 處理任務列表開關
   const handleTaskMenuToggle = () => {
     setIsTaskMenuOpen(!isTaskMenuOpen);
+  };
+
+  // 切換專注模式
+  const toggleFocusMode = () => {
+    if (isActive) { // 只有在計時器激活時才能進入專注模式
+      setIsFocusMode(!isFocusMode);
+    }
   };
 
   return (
@@ -413,6 +423,21 @@ function App() {
               >
                 <FolderIcon />
               </IconButton>
+
+              <Tooltip title={isActive ? "進入全屏專注模式" : "計時開始後可啟用"}>
+                <span>
+                  <IconButton 
+                    onClick={toggleFocusMode}
+                    disabled={!isActive}
+                    sx={{ 
+                      color: isFocusMode ? 'primary.main' : 'inherit',
+                      opacity: !isActive ? 0.5 : 1
+                    }}
+                  >
+                    <FullscreenIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
             </Box>
 
             <IconButton 
@@ -604,6 +629,18 @@ function App() {
               onSave={handleEditorSave}
             />
           </>
+        )}
+
+        {/* 專注模式計時器 */}
+        {isFocusMode && isActive && (
+          <FocusTimer
+            time={time}
+            selectedTime={selectedTime}
+            isActive={isActive}
+            currentNote={currentNote}
+            selectedTask={selectedTask}
+            onComplete={handleComplete}
+          />
         )}
       </div>
     </LocalizationProvider>

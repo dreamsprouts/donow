@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const mongoose = require('mongoose');
 const tasksRouter = require('./routes/tasks');
 const projectsRouter = require('./routes/projects');
+const reportsRouter = require('./routes/reports');
 const https = require('https');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -50,7 +51,8 @@ app.use((req, res, next) => {
 // Connect to MongoDB
 connectDB();
 
-// 定時喚醒機制
+// 定時喚醒機制 - 已停用，改用外部 ping 服務
+/*
 const PING_INTERVAL = 14 * 60 * 1000; // 14分鐘
 const pingServer = () => {
   const url = process.env.NODE_ENV === 'production' 
@@ -69,11 +71,25 @@ const pingServer = () => {
 if (process.env.NODE_ENV === 'production') {
   setInterval(pingServer, PING_INTERVAL);
 }
+*/
 
 // Routes
 app.use('/api/timer', require('./routes/timer'));
 app.use('/api/tasks', tasksRouter);
 app.use('/api/projects', projectsRouter);
+app.use('/api/reports', reportsRouter);
+
+// 處理 /export 路徑轉發到 /api/reports/export
+app.get('/export', (req, res) => {
+  console.log(`${new Date().toISOString()} 捕獲 /export 路徑請求，準備轉發`);
+  console.log('原始URL:', req.url); // 完整的 URL 包含查詢參數
+  
+  // 將請求轉發到 /api/reports/export 路徑
+  const fullUrl = `/api/reports/export${req.url.replace(/^\/export/, '')}`;
+  console.log('轉發到:', fullUrl);
+  
+  res.redirect(fullUrl);
+});
 
 // 加入根路徑處理
 app.get('/', (req, res) => {
@@ -90,6 +106,8 @@ app.get('/api', (req, res) => {
     endpoints: {
       tasks: '/api/tasks',
       timer: '/api/timer',
+      projects: '/api/projects',
+      reports: '/api/reports',
       health: '/api/health'
     },
     version: '0.4.1'
