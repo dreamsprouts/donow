@@ -30,6 +30,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { exportReport, fetchReportViews, saveReportView, deleteReportView } from '../services/reportService';
+import { useAuth } from './Auth/AuthContext';
 
 // 添加 API_URL 常量
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
@@ -67,10 +68,19 @@ const ReportExportDialog = ({ open, onClose, startDate, endDate, projectIds }) =
   const [isSaving, setIsSaving] = useState(false);
   const [currentView, setCurrentView] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  
+  // 獲取用戶認證狀態
+  const { currentUser } = useAuth();
 
   // 初始載入視圖設定
   useEffect(() => {
     const loadViews = async () => {
+      // 如果用戶未登入，不執行API請求
+      if (!currentUser) {
+        setViews([]);
+        return;
+      }
+      
       try {
         const response = await fetchReportViews();
         if (response && response.data) {
@@ -94,7 +104,7 @@ const ReportExportDialog = ({ open, onClose, startDate, endDate, projectIds }) =
       loadViews();
       handleReset();
     }
-  }, [open]);
+  }, [open, currentUser]);
 
   // 重置狀態
   const handleReset = () => {
@@ -122,6 +132,12 @@ const ReportExportDialog = ({ open, onClose, startDate, endDate, projectIds }) =
 
   // 保存視圖
   const handleSaveView = async () => {
+    // 如果用戶未登入，顯示錯誤並退出
+    if (!currentUser) {
+      setError('請先登入以保存視圖');
+      return;
+    }
+    
     if (!viewName.trim()) {
       setError('請輸入視圖名稱');
       return;
@@ -167,6 +183,12 @@ const ReportExportDialog = ({ open, onClose, startDate, endDate, projectIds }) =
 
   // 執行匯出
   const handleExport = async () => {
+    // 如果用戶未登入，顯示錯誤並退出
+    if (!currentUser) {
+      setError('請先登入以匯出報表');
+      return;
+    }
+    
     if (selectedFields.length === 0) {
       setError('請至少選擇一個欄位');
       return;

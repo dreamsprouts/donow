@@ -26,6 +26,12 @@ const actionSchema = new mongoose.Schema({
     }
   },
   
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  
   note: {
     type: String,
     default: '專注'

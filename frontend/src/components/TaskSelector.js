@@ -12,6 +12,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { fetchTasks, createTask, deleteTask } from '../services/taskService';
+import { useAuth } from './Auth/AuthContext';
 
 const filter = createFilterOptions();
 
@@ -20,15 +21,36 @@ const TaskSelector = ({ onTaskSelect, defaultValue, context, disabled }) => {
   const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [deleteError, setDeleteError] = useState(null);
+  
+  // 獲取用戶認證狀態
+  const { currentUser } = useAuth();
 
   useEffect(() => {
-    loadTasks();
-  }, []);
+    // 只有在用戶登入時才載入數據
+    if (currentUser) {
+      loadTasks();
+    }
+  }, [currentUser]); // 添加 currentUser 作為依賴項
 
   // 每當 context 變化時重新載入任務列表
   useEffect(() => {
-    loadTasks();
-  }, []);
+    if (currentUser && context) {
+      loadTasks();
+    }
+  }, [context, currentUser]);
+  
+  // 監聽用戶登入狀態變化
+  useEffect(() => {
+    if (currentUser) {
+      // 用戶已登入，載入數據
+      loadTasks();
+    } else {
+      // 用戶已登出，清空數據
+      setTasks([]);
+      setInputValue('');
+      setDeleteError(null);
+    }
+  }, [currentUser]);
 
   // 監控 defaultValue 的變化
   useEffect(() => {
@@ -107,6 +129,13 @@ const TaskSelector = ({ onTaskSelect, defaultValue, context, disabled }) => {
 
   const handleDeleteTask = async (taskId, event) => {
     event.stopPropagation();
+    
+    // 檢查用戶是否已登入
+    if (!currentUser) {
+      setDeleteError('請先登入');
+      return;
+    }
+    
     try {
       const taskToDelete = tasks.find(t => t._id === taskId);
       
@@ -118,14 +147,31 @@ const TaskSelector = ({ onTaskSelect, defaultValue, context, disabled }) => {
 
       setLoading(true);
       setDeleteError(null);
-      await deleteTask(taskId);
-      await loadTasks();
       
-      if (defaultValue._id === taskId) {
-        onTaskSelect(null, null);
+      console.log('發起刪除任務請求:', taskId);
+      
+      try {
+        await deleteTask(taskId);
+        console.log('任務刪除成功');
+        await loadTasks();
+        
+        if (defaultValue && defaultValue._id === taskId) {
+          onTaskSelect(null, null);
+        }
+      } catch (error) {
+        console.error('刪除任務API返回錯誤:', error);
+        
+        if (error.message && error.message.includes('關聯的時間記錄')) {
+          setDeleteError('此任務已有關聯的時間記錄，無法刪除');
+        } else if (error.message && error.message.includes('無權訪問')) {
+          setDeleteError('您沒有權限刪除此任務');
+        } else {
+          setDeleteError(error.message || '刪除任務失敗');
+        }
       }
     } catch (error) {
-      setDeleteError(error.message);
+      console.error('刪除任務處理過程發生錯誤:', error);
+      setDeleteError('處理刪除請求時發生錯誤');
     } finally {
       setLoading(false);
     }

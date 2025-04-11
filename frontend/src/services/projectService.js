@@ -1,9 +1,26 @@
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
+// 獲取授權頭部
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return headers;
+};
+
 // 獲取所有專案
 export const fetchProjects = async () => {
   try {
-    const response = await fetch(`${API_URL}/api/projects`);
+    const response = await fetch(`${API_URL}/api/projects`, {
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
     if (!response.ok) throw new Error('獲取專案列表失敗');
     return await response.json();
   } catch (error) {
@@ -17,9 +34,8 @@ export const createProject = async (projectData) => {
   try {
     const response = await fetch(`${API_URL}/api/projects`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
+      credentials: 'include',
       body: JSON.stringify(projectData),
     });
     if (!response.ok) throw new Error('建立專案失敗');
@@ -35,9 +51,8 @@ export const updateProject = async (projectId, projectData) => {
   try {
     const response = await fetch(`${API_URL}/api/projects/${projectId}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
+      credentials: 'include',
       body: JSON.stringify(projectData),
     });
     if (!response.ok) throw new Error('更新專案失敗');
@@ -53,6 +68,8 @@ export const deleteProject = async (projectId) => {
   try {
     const response = await fetch(`${API_URL}/api/projects/${projectId}`, {
       method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include'
     });
     
     if (!response.ok) {
@@ -72,7 +89,10 @@ export const deleteProject = async (projectId) => {
 export const fetchProjectStats = async (params) => {
   try {
     const queryString = new URLSearchParams(params).toString();
-    const response = await fetch(`${API_URL}/api/projects/stats?${queryString}`);
+    const response = await fetch(`${API_URL}/api/projects/stats?${queryString}`, {
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
     if (!response.ok) throw new Error('獲取專案統計失敗');
     return await response.json();
   } catch (error) {
@@ -101,7 +121,10 @@ export const getProjectStats = async (params) => {
     }
     
     const response = await fetch(
-      `${API_URL}/api/projects/stats?${queryParams.toString()}`
+      `${API_URL}/api/projects/stats?${queryParams.toString()}`, {
+        headers: getAuthHeaders(),
+        credentials: 'include'
+      }
     );
     
     if (!response.ok) {

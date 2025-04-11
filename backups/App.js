@@ -5,7 +5,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { zhTW } from 'date-fns/locale';
 import ActionItem from './components/ActionItem';
 import ActionItemEditor from './components/ActionItemEditor';
-import { Box, ToggleButton, ToggleButtonGroup, IconButton, AppBar, Toolbar, Typography, Tooltip, CircularProgress } from '@mui/material';
+import { Box, ToggleButton, ToggleButtonGroup, IconButton, AppBar, Toolbar, Typography, Tooltip } from '@mui/material';
 import TaskTester from './components/TaskTester';
 import TaskSelector from './components/TaskSelector';
 import { updateActionTask } from './services/taskService';  // 修正路徑
@@ -21,28 +21,8 @@ import FolderIcon from '@mui/icons-material/Folder';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import { useMediaQuery } from '@mui/material';
 import FocusTimer from './components/FocusTimer';
-// 導入身份驗證相關
-import { useAuth } from './components/Auth/AuthContext';
-import Auth from './components/Auth/Auth';
-import Button from '@mui/material/Button';
-import PersonIcon from '@mui/icons-material/Person';
-import LogoutIcon from '@mui/icons-material/Logout';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-
-// 獲取授權頭部
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
-  const headers = {
-    'Content-Type': 'application/json'
-  };
-  
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  return headers;
-};
 
 // 預設的時間選項（分鐘）
 const TIME_OPTIONS = [5, 10, 15, 20, 25, 30, 45, 60, 90, 120];
@@ -71,45 +51,11 @@ function App() {
   const shouldOverlay = !isWideScreen;  // 新增這個判斷
   const [isProjectMode, setIsProjectMode] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false); // 專注模式狀態
-  
-  // 認證狀態和模態框控制
-  const { currentUser, logout, loading: authLoading } = useAuth();
-  // 更新預設值：使用 null 表示初始未確定狀態，等待確認後再決定是否顯示模態框
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(null);
-  
-  const handleAuthModalOpen = () => setIsAuthModalOpen(true);
-  const handleAuthModalClose = () => {
-    // 只有在用戶已登入的情況下才允許關閉登入模態框
-    if (currentUser) {
-      setIsAuthModalOpen(false);
-    }
-  };
-  
-  // 監聽用戶登入狀態變化，自動控制模態框
-  useEffect(() => {
-    // 只有當認證狀態加載完成後才設置模態框狀態
-    if (!authLoading) {
-      if (!currentUser) {
-        setIsAuthModalOpen(true);  // 未登入，顯示登入模態框
-      } else {
-        setIsAuthModalOpen(false); // 已登入，隱藏登入模態框
-      }
-    }
-  }, [currentUser, authLoading]);
-  
-  // 修改登出函數，以確保登出後顯示登入模態框
-  const handleLogout = () => {
-    logout(); // 調用原始登出函數
-    setIsAuthModalOpen(true); // 確保顯示登入模態框
-  };
 
   // 先定義 fetchActions
   const fetchActions = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/timer/actions`, {
-        headers: getAuthHeaders(),
-        credentials: 'include'
-      });
+      const response = await fetch(`${API_URL}/api/timer/actions`);
       if (!response.ok) throw new Error('Failed to fetch actions');
       const data = await response.json();
       
@@ -123,33 +69,12 @@ function App() {
       
       setActions(sortedData);
       
-      // 如果有行動記錄，使用最近的任務
+      // 如果有資料，設置最近使用的 task
       if (sortedData.length > 0 && sortedData[0].task) {
         setSelectedTaskId(sortedData[0].task._id);
         setSelectedTask(sortedData[0].task);
-      } else {
-        // 首次使用（沒有行動記錄），嘗試獲取預設任務
-        try {
-          const tasksResponse = await fetch(`${API_URL}/api/tasks`, {
-            headers: getAuthHeaders(),
-            credentials: 'include'
-          });
-          
-          if (tasksResponse.ok) {
-            const tasksData = await tasksResponse.json();
-            // 查找預設任務
-            const defaultTask = tasksData.find(task => task.isDefault || task.name === '一般任務');
-            
-            if (defaultTask) {
-              console.log('首次使用，自動選擇預設任務:', defaultTask.name);
-              setSelectedTaskId(defaultTask._id);
-              setSelectedTask(defaultTask);
-            }
-          }
-        } catch (err) {
-          console.error('獲取預設任務失敗:', err);
-        }
       }
+      
     } catch (error) {
       console.error('Error fetching actions:', error);
     }
@@ -164,8 +89,9 @@ function App() {
         
         const response = await fetch(`${API_URL}/api/timer/end/${currentAction._id}`, {
           method: 'PUT',
-          headers: getAuthHeaders(),
-          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({
             endTime: endTime
           })
@@ -209,8 +135,9 @@ function App() {
         // 在頁面關閉前同步執行結束操作
         fetch(`${API_URL}/api/timer/end/${currentAction._id}`, {
           method: 'PUT',
-          headers: getAuthHeaders(),
-          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({
             endTime: new Date().toISOString()
           }),
@@ -232,11 +159,8 @@ function App() {
 
   // 初始載入
   useEffect(() => {
-    // 只有當用戶已登入時才加載數據
-    if (currentUser) {
-      fetchActions();
-    }
-  }, [currentUser]); // 添加 currentUser 作為依賴，這樣用戶狀態變化時會重新執行
+    fetchActions();
+  }, []);
 
   useEffect(() => {
     document.title = 'DoNow';
@@ -262,25 +186,25 @@ function App() {
       const now = new Date();
       const response = await fetch(`${API_URL}/api/timer/start`, {
         method: 'POST',
-        headers: getAuthHeaders(),
-        credentials: 'include',
-        body: JSON.stringify({
-          taskId: selectedTaskId,
-          note: currentNote || '專注',
-          startTime: now.toISOString()
-        }),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          note: currentNote,
+          startTime: now.toISOString(),
+          duration: selectedTime * 60,
+          taskId: selectedTaskId
+        })
       });
-
-      if (!response.ok) throw new Error('Failed to start timer');
       
-      const newAction = await response.json();
-      setCurrentAction(newAction);
+      if (!response.ok) throw new Error('Failed to start timer');
+      const data = await response.json();
+      setCurrentAction(data);
       setIsActive(true);
-      setStartTime(now);  // 使用現在的時間作為開始時間
-
-      fetchActions();
+      setStartTime(now);
+      setTime(selectedTime * 60);
     } catch (error) {
-      console.error('Error starting timer:', error);
+      handleApiError(error, 'Error starting timer:');
     }
   };
 
@@ -288,18 +212,15 @@ function App() {
     try {
       const response = await fetch(`${API_URL}/api/timer/note/${actionId}`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
-        credentials: 'include',
-        body: JSON.stringify({ note }),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ note })
       });
-      
       if (!response.ok) throw new Error('Failed to update note');
-      
       fetchActions();
-      return true;
     } catch (error) {
-      console.error('Error updating note:', error);
-      return false;
+      handleApiError(error, 'Error updating note:');
     }
   };
 
@@ -311,24 +232,14 @@ function App() {
   };
 
   const deleteAction = async (actionId) => {
-    // 檢查用戶是否已登入
-    if (!currentUser) {
-      console.error('請先登入');
-      return;
-    }
-    
     try {
       const response = await fetch(`${API_URL}/api/timer/delete/${actionId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-        credentials: 'include',
+        method: 'DELETE'
       });
-      
       if (!response.ok) throw new Error('Failed to delete action');
-      
       fetchActions();
     } catch (error) {
-      console.error('Error deleting action:', error);
+      handleApiError(error, 'Error deleting action:');
     }
   };
 
@@ -336,19 +247,15 @@ function App() {
     try {
       const response = await fetch(`${API_URL}/api/timer/time/${actionId}`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
-        credentials: 'include',
-        body: JSON.stringify({
-          userStartTime, 
-          userEndTime
-        }),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userStartTime, userEndTime })
       });
-      
       if (!response.ok) throw new Error('Failed to update time');
-      
       fetchActions();
     } catch (error) {
-      console.error('Error updating time:', error);
+      handleApiError(error, 'Error updating time:');
     }
   };
 
@@ -464,8 +371,7 @@ function App() {
 
   // 初始載入和定期更新
   useEffect(() => {
-    // 只有當用戶已登入且模式為 timer 時才獲取數據和設置定時器
-    if (currentUser && mode === 'timer') {
+    if (mode === 'timer') {
       fetchActions();
       
       // 如果正在計時，設置定期更新
@@ -477,7 +383,7 @@ function App() {
 
       return () => clearInterval(interval);
     }
-  }, [mode, isActive, currentUser]); // 添加 currentUser 作為依賴項
+  }, [mode, isActive]);
 
   // 處理任務列表開關
   const handleTaskMenuToggle = () => {
@@ -491,72 +397,21 @@ function App() {
     }
   };
 
-  // 監聽用戶登入狀態變化，清理登出後的數據
-  useEffect(() => {
-    if (currentUser) {
-      // 用戶已登入，可以加載數據
-      fetchActions();
-    } else {
-      // 用戶已登出，清空數據
-      setActions([]);
-      setSelectedTask(null);
-      setSelectedTaskId(null);
-      setCurrentNote('專注一段時間');
-      // 確保其他相關狀態也被重置
-      if (isActive) {
-        // 如果有正在進行的計時，也需要結束
-        handleComplete();
-      }
-    }
-  }, [currentUser, handleComplete]);
-
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={zhTW}>
       <div className="App">
-        {/* 加載遮罩 - 當認證狀態正在加載或未確定時顯示 */}
-        {(authLoading || isAuthModalOpen === null) && (
-          <Box
-            sx={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              bgcolor: 'rgba(0, 0, 0, 0.85)',
-              backdropFilter: 'blur(10px)',
-              zIndex: 9999,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <CircularProgress color="primary" />
-          </Box>
-        )}
-
         {/* Header */}
         <AppBar position="static" color="transparent" elevation={0}>
           <Toolbar sx={{ justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="h6" component="div">
-                DoNow
-              </Typography>
-              
               <ToggleButtonGroup
                 value={mode}
                 exclusive
                 onChange={handleModeChange}
                 size="small"
-                sx={{ ml: 2 }}
               >
-                <ToggleButton value="timer">
-                  <TimerIcon />
-                  {!isMobile && <span style={{ marginLeft: '4px' }}>專注</span>}
-                </ToggleButton>
-                <ToggleButton value="habit">
-                  <RepeatIcon />
-                  {!isMobile && <span style={{ marginLeft: '4px' }}>習慣</span>}
-                </ToggleButton>
+                <ToggleButton value="timer">專注</ToggleButton>
+                <ToggleButton value="habit">習慣</ToggleButton>
               </ToggleButtonGroup>
 
               <IconButton 
@@ -585,40 +440,12 @@ function App() {
               </Tooltip>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {/* 用戶認證按鈕 - 響應式設計 */}
-              {currentUser ? (
-                <Button 
-                  variant="outlined"
-                  color="primary"
-                  size="small"
-                  onClick={handleLogout}
-                  // 在手機上只顯示「登出」文字，不顯示用戶名和圖標
-                  endIcon={isMobile ? null : <LogoutIcon />}
-                  sx={{ mr: 1 }}
-                >
-                  {isMobile ? '登出' : `${currentUser.name || '用戶'} 登出`}
-                </Button>
-              ) : (
-                <Button 
-                  variant="contained"
-                  color="primary"
-                  size="small"
-                  onClick={handleAuthModalOpen}
-                  // 在手機上只顯示「登入」文字，不顯示圖標
-                  startIcon={isMobile ? null : <PersonIcon />}
-                  sx={{ mr: 1 }}
-                >
-                  登入
-                </Button>
-              )}
-              
-              <IconButton 
-                onClick={handleTaskMenuToggle}
-              >
-                <MenuIcon />
-              </IconButton>
-            </Box>
+            <IconButton 
+              onClick={handleTaskMenuToggle}
+              sx={{ ml: 'auto' }}
+            >
+              <MenuIcon />
+            </IconButton>
           </Toolbar>
         </AppBar>
 
@@ -814,11 +641,6 @@ function App() {
             selectedTask={selectedTask}
             onComplete={handleComplete}
           />
-        )}
-
-        {/* 身份驗證模態框 - 只在明確需要顯示時才渲染 */}
-        {isAuthModalOpen === true && (
-          <Auth open={true} onClose={handleAuthModalClose} />
         )}
       </div>
     </LocalizationProvider>

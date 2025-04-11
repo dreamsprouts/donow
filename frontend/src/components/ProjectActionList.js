@@ -15,8 +15,24 @@ import {
 } from '@mui/material';
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
+import { useAuth } from './Auth/AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+
+// 獲取授權頭部
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return headers;
+};
 
 const formatDuration = (milliseconds) => {
   const seconds = Math.floor(milliseconds / 1000);
@@ -36,9 +52,12 @@ function ProjectActionList({ projectId, startDate, endDate }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
+  
+  // 獲取用戶認證狀態
+  const { currentUser } = useAuth();
 
   const fetchActions = useCallback(async () => {
-    if (!projectId) return;
+    if (!projectId || !currentUser) return;
     
     try {
       setLoading(true);
@@ -61,9 +80,8 @@ function ProjectActionList({ projectId, startDate, endDate }) {
       const response = await fetch(
         `${API_URL}/api/projects/${projectId}/actions?${params.toString()}`,
         {
-          headers: {
-            'Accept': 'application/json'
-          }
+          headers: getAuthHeaders(),
+          credentials: 'include'
         }
       );
 
@@ -83,11 +101,24 @@ function ProjectActionList({ projectId, startDate, endDate }) {
     } finally {
       setLoading(false);
     }
-  }, [projectId, page, rowsPerPage, startDate, endDate]);
+  }, [projectId, page, rowsPerPage, startDate, endDate, currentUser]);
 
   useEffect(() => {
-    fetchActions();
-  }, [fetchActions]);
+    // 只有當用戶已登入且有專案 ID 時才獲取數據
+    if (currentUser && projectId) {
+      fetchActions();
+    }
+  }, [fetchActions, currentUser, projectId]);
+
+  // 監聽用戶登入狀態變化
+  useEffect(() => {
+    if (!currentUser) {
+      // 用戶已登出，清空數據
+      setActions([]);
+      setTotalCount(0);
+      setError(null);
+    }
+  }, [currentUser]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -97,6 +128,11 @@ function ProjectActionList({ projectId, startDate, endDate }) {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  // 如果未登入，顯示空內容
+  if (!currentUser) {
+    return null;
+  }
 
   if (loading) {
     return (

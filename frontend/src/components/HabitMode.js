@@ -5,6 +5,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { fetchTasks, createTask, fetchHabitActions } from '../services/taskService';
+import { useAuth } from './Auth/AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
@@ -15,6 +16,9 @@ const HabitMode = () => {
   const [newTaskName, setNewTaskName] = useState('');
   const [selectedTask, setSelectedTask] = useState(null);
   const [note, setNote] = useState('');
+  
+  // 獲取用戶認證狀態
+  const { currentUser } = useAuth();
 
   // 載入 habit tasks
   const loadHabitTasks = async () => {
@@ -38,12 +42,36 @@ const HabitMode = () => {
 
   // 初始載入
   useEffect(() => {
-    loadHabitTasks();
-    loadHabitActions();
-  }, []);
+    // 只有在用戶登入時才載入數據
+    if (currentUser) {
+      loadHabitTasks();
+      loadHabitActions();
+    }
+  }, [currentUser]); // 添加 currentUser 作為依賴項
+  
+  // 監聽用戶登入狀態變化
+  useEffect(() => {
+    if (currentUser) {
+      // 用戶已登入，載入數據
+      loadHabitTasks();
+      loadHabitActions();
+    } else {
+      // 用戶已登出，清空數據
+      setHabitTasks([]);
+      setHabitActions([]);
+      setSelectedTask(null);
+      setNote('');
+    }
+  }, [currentUser]);
 
   // 建立新的 habit task
   const handleCreateTask = async () => {
+    // 檢查用戶是否已登入
+    if (!currentUser) {
+      console.error('請先登入');
+      return;
+    }
+    
     if (!newTaskName.trim()) return;
     try {
       await createTask({
@@ -60,13 +88,20 @@ const HabitMode = () => {
 
   // 記錄 habit
   const handleRecord = async () => {
+    // 檢查用戶是否已登入
+    if (!currentUser) {
+      console.error('請先登入');
+      return;
+    }
+    
     if (!selectedTask) return;
     try {
       const now = new Date();
       const response = await fetch(`${API_URL}/api/timer/habit`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
           taskId: selectedTask._id,

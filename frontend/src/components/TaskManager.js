@@ -13,6 +13,7 @@ import TaskCard from './TaskCard';
 import TaskEditor from './TaskEditor';
 import { fetchTasks, createTask, deleteTask, updateTask } from '../services/taskService';
 import CloseIcon from '@mui/icons-material/Close';
+import { useAuth } from './Auth/AuthContext';
 
 const TaskManager = ({ onClose, isMobile }) => {
   const [tasks, setTasks] = useState([]);
@@ -22,6 +23,9 @@ const TaskManager = ({ onClose, isMobile }) => {
   const [taskType, setTaskType] = useState('project');
   const [editingTask, setEditingTask] = useState(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  
+  // 獲取用戶認證狀態
+  const { currentUser } = useAuth();
 
   // 載入任務列表
   const loadTasks = async () => {
@@ -43,8 +47,25 @@ const TaskManager = ({ onClose, isMobile }) => {
   };
 
   useEffect(() => {
-    loadTasks();
-  }, []);
+    // 只有在用戶登入時才載入數據
+    if (currentUser) {
+      loadTasks();
+    }
+  }, [currentUser]); // 添加 currentUser 作為依賴項
+  
+  // 監聽用戶登入狀態變化
+  useEffect(() => {
+    if (currentUser) {
+      // 用戶已登入，載入數據
+      loadTasks();
+    } else {
+      // 用戶已登出，清空數據
+      setTasks([]);
+      setError(null);
+      setEditingTask(null);
+      setIsEditorOpen(false);
+    }
+  }, [currentUser]);
 
   // 建立新任務
   const handleCreateTask = async () => {
@@ -70,14 +91,36 @@ const TaskManager = ({ onClose, isMobile }) => {
 
   // 刪除任務
   const handleDeleteTask = async (taskId) => {
+    // 檢查用戶是否已登入
+    if (!currentUser) {
+      setError('請先登入');
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
-      await deleteTask(taskId);
-      await loadTasks();
+      
+      console.log('TaskManager 發起刪除任務請求:', taskId);
+      
+      try {
+        await deleteTask(taskId);
+        console.log('任務刪除成功');
+        await loadTasks();
+      } catch (error) {
+        console.error('刪除任務API返回錯誤:', error);
+        
+        if (error.message && error.message.includes('關聯的時間記錄')) {
+          setError('此任務已有關聯的時間記錄，無法刪除');
+        } else if (error.message && error.message.includes('無權訪問')) {
+          setError('您沒有權限刪除此任務');
+        } else {
+          setError(error.message || '刪除任務失敗');
+        }
+      }
     } catch (err) {
-      setError('刪除任務失敗');
-      console.error(err);
+      console.error('刪除任務處理過程發生錯誤:', err);
+      setError('處理刪除請求時發生錯誤');
     } finally {
       setLoading(false);
     }

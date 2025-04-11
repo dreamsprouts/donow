@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { CirclePicker } from 'react-color';
+import ColorPickerWrapper from './ColorPickerWrapper';
 
 // 從 Task model 引入顏色定義
 const TASK_COLORS = [
@@ -88,7 +88,7 @@ const TaskEditor = ({ task, open, onClose, onSave, onDelete }) => {
           <Typography variant="subtitle2" sx={{ mb: 1.5, color: 'text.secondary' }}>
             任務顏色
           </Typography>
-          <CirclePicker
+          <ColorPickerWrapper
             color={color}
             colors={TASK_COLORS}
             onChange={(color) => setColor(color.hex)}

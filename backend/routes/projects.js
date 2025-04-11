@@ -3,11 +3,17 @@ const router = express.Router();
 const Project = require('../models/Project');
 const Timer = require('../models/Timer');
 const Task = require('../models/Task');
+const auth = require('../middleware/auth');
+const checkOwnership = require('../middleware/checkOwnership');
+
+// 使用認證中間件保護所有路由
+router.use(auth);
 
 // 獲取時間統計數據
 router.get('/stats', async (req, res) => {
   try {
     const { startDate, endDate, projectIds, taskIds } = req.query;
+    const userId = req.user.id;
     
     if (!startDate || !endDate) {
       return res.status(400).json({ message: '必須提供開始和結束日期' });
@@ -24,13 +30,17 @@ router.get('/stats', async (req, res) => {
     const query = {
       userStartTime: { $gte: start },
       userEndTime: { $lte: end },
-      isCompleted: true
+      isCompleted: true,
+      userId: userId  // 只查詢當前用戶的資料
     };
 
     // 如果有指定專案，加入專案篩選
     if (projectIds) {
       const projectIdArray = projectIds.split(',');
-      const tasks = await Task.find({ project: { $in: projectIdArray } });
+      const tasks = await Task.find({ 
+        project: { $in: projectIdArray },
+        userId: userId  // 確保只查詢用戶自己的任務
+      });
       const taskIds = tasks.map(task => task._id);
       query.task = { $in: taskIds };
     }
@@ -163,7 +173,8 @@ router.get('/stats', async (req, res) => {
 // 獲取所有專案
 router.get('/', async (req, res) => {
   try {
-    const projects = await Project.find().sort({ createdAt: -1 });
+    const userId = req.user.id;
+    const projects = await Project.find({ userId }).sort({ createdAt: -1 });
     res.json(projects);
   } catch (error) {
     console.error('Error fetching projects:', error);
@@ -175,6 +186,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { name, isBillable, hourlyRate, monthlyBudgetLimit } = req.body;
+    const userId = req.user.id;
     
     // 驗證必填欄位
     if (!name) {
@@ -188,6 +200,7 @@ router.post('/', async (req, res) => {
 
     const project = new Project({
       name,
+      userId,  // 添加用戶 ID
       isBillable: isBillable || false,
       hourlyRate: isBillable ? hourlyRate : 0,
       monthlyBudgetLimit: isBillable && monthlyBudgetLimit ? monthlyBudgetLimit : 0
@@ -201,15 +214,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 更新專案
-router.put('/:id', async (req, res) => {
+// 更新專案 - 添加所有權檢查
+router.put('/:id', checkOwnership(Project), async (req, res) => {
   try {
     const { name, isBillable, hourlyRate, monthlyBudgetLimit } = req.body;
     const project = await Project.findById(req.params.id);
-
-    if (!project) {
-      return res.status(404).json({ message: '找不到專案' });
-    }
 
     // 驗證必填欄位
     if (!name) {
@@ -234,25 +243,37 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// 刪除專案
-router.delete('/:id', async (req, res) => {
+// 刪除專案 - 添加所有權檢查
+router.delete('/:id', checkOwnership(Project), async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id);
-
+    const projectId = req.params.id;
+    const userId = req.user.id;
+    
+    // 先獲取專案資訊
+    const project = await Project.findById(projectId);
     if (!project) {
-      return res.status(404).json({ message: '找不到專案' });
+      return res.status(404).json({ message: '找不到該專案' });
     }
 
     // 檢查是否有關聯的任務
-    const hasTasks = await Task.exists({ project: project._id });
+    const hasTasks = await Task.exists({ 
+      project: projectId,
+      userId: userId
+    });
+    
     if (hasTasks) {
       return res.status(400).json({ 
         message: '無法刪除已有關聯任務的專案' 
       });
     }
 
-    await Project.findByIdAndDelete(req.params.id);
-    res.json({ message: '專案已刪除' });
+    // 使用現代的方法刪除
+    const deletedProject = await Project.findByIdAndDelete(projectId);
+    if (!deletedProject) {
+      return res.status(404).json({ message: '專案不存在或已被刪除' });
+    }
+    
+    res.json({ message: '專案已刪除', deletedProject });
   } catch (error) {
     console.error('Error deleting project:', error);
     res.status(500).json({ message: 'Error deleting project' });

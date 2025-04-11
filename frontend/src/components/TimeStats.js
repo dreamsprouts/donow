@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { projectService } from '../services/projectService';
 import TimeRangePicker from './TimeRangePicker';
+import { useAuth } from './Auth/AuthContext';
 
 const TimeStats = () => {
   const [loading, setLoading] = useState(false);
@@ -24,8 +25,16 @@ const TimeStats = () => {
     startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
     endDate: new Date(),
   });
+  
+  // 獲取用戶認證狀態
+  const { currentUser } = useAuth();
 
   const fetchStats = async () => {
+    if (!currentUser) {
+      setStats(null);
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
@@ -33,18 +42,33 @@ const TimeStats = () => {
       setStats(data);
     } catch (err) {
       setError(err.message || '獲取統計數據失敗');
+      setStats(null);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStats();
-  }, [timeRange]);
+    if (currentUser) {
+      fetchStats();
+    } else {
+      setStats(null);
+      setError(null);
+    }
+  }, [timeRange, currentUser]);
 
   const handleTimeRangeChange = (newRange) => {
     setTimeRange(newRange);
   };
+
+  // 如果用戶未登入，顯示提示信息
+  if (!currentUser) {
+    return (
+      <Box p={3}>
+        <Alert severity="info">請登入以查看時間統計</Alert>
+      </Box>
+    );
+  }
 
   if (loading) {
     return (

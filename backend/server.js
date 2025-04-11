@@ -9,6 +9,8 @@ const reportsRouter = require('./routes/reports');
 const https = require('https');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
+const passport = require('passport');
 
 dotenv.config();
 
@@ -25,6 +27,11 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 app.use(express.json({ limit: '10kb' }));
+app.use(cookieParser()); // 添加 cookie-parser 中間件
+
+// 初始化 Passport
+app.use(passport.initialize());
+require('./config/passport'); // 載入 Passport 配置
 
 // 在其他 middleware 之前加入
 const limiter = rateLimit({
@@ -78,6 +85,8 @@ app.use('/api/timer', require('./routes/timer'));
 app.use('/api/tasks', tasksRouter);
 app.use('/api/projects', projectsRouter);
 app.use('/api/reports', reportsRouter);
+// 添加認證路由
+app.use('/api/auth', require('./routes/auth'));
 
 // 處理 /export 路徑轉發到 /api/reports/export
 app.get('/export', (req, res) => {

@@ -45,6 +45,7 @@ import ReportTimeRangePicker from './ReportTimeRangePicker';
 import ProjectActionList from './ProjectActionList';
 import { getProjectStats } from '../services/projectService';
 import ReportExportDialog from './ReportExportDialog';
+import { useAuth } from './Auth/AuthContext';
 
 // TabPanel 組件
 function TabPanel({ children, value, index }) {
@@ -95,6 +96,9 @@ function ProjectManager() {
   const [openExportDialog, setOpenExportDialog] = useState(false);
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
+  
+  // 獲取用戶認證狀態
+  const { currentUser } = useAuth();
 
   // 獲取專案和任務列表
   const loadData = async () => {
@@ -128,6 +132,12 @@ function ProjectManager() {
 
   // 獲取時間統計數據
   const fetchStats = async () => {
+    // 如果用戶未登入，不執行請求
+    if (!currentUser) {
+      setStats(null);
+      return;
+    }
+    
     try {
       setIsLoading(true);
       setError(null);
@@ -171,18 +181,51 @@ function ProjectManager() {
   // 只在選定的專案改變時重新獲取統計數據
   useEffect(() => {
     if (tabValue === 1) {  // 只在時間統計標籤頁激活時獲取數據
-      fetchStats();
+      if (currentUser) {
+        fetchStats();
+      } else {
+        // 如果沒有用戶登入，確保清空統計數據
+        setStats(null);
+      }
     }
-  }, [timeRange, tabValue, selectedProjects]);
+  }, [timeRange, tabValue, selectedProjects, currentUser]);
 
   // 初始載入
   useEffect(() => {
-    loadData();
-  }, []);
+    // 僅在用戶登入狀態下載入數據
+    if (currentUser) {
+      loadData();
+    }
+  }, [currentUser]); // 添加 currentUser 作為依賴項
+  
+  // 監聽用戶登入狀態變化
+  useEffect(() => {
+    if (currentUser) {
+      // 用戶已登入，載入數據
+      loadData();
+      // 如果當前在統計頁面，也刷新統計數據
+      if (tabValue === 1) {
+        fetchStats();
+      }
+    } else {
+      // 用戶已登出，清空數據
+      setProjects([]);
+      setTasks([]);
+      setStats(null);
+      setSelectedProjects([]);
+      setAllProjects([]);
+      setExpandedProjects({});
+    }
+  }, [currentUser, tabValue]);
 
   // 處理標籤頁切換
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
+    
+    // 切換到統計頁面時，如果已登入，則獲取數據
+    if (newValue === 1 && currentUser) {
+      fetchStats();
+    }
   };
 
   // 處理表單變更
@@ -214,6 +257,12 @@ function ProjectManager() {
 
   // 處理刪除
   const handleDelete = async (projectId) => {
+    // 檢查用戶是否已登入
+    if (!currentUser) {
+      setError('請先登入');
+      return;
+    }
+    
     if (!window.confirm('確定要刪除這個專案嗎？')) return;
     
     try {
@@ -251,13 +300,31 @@ function ProjectManager() {
 
   // 處理任務專案關聯更新
   const handleTaskProjectChange = async (taskId, projectId) => {
+    // 檢查用戶是否已登入
+    if (!currentUser) {
+      setError('請先登入');
+      return;
+    }
+    
     try {
-      await updateTask(taskId, { project: projectId });
+      // 找到當前任務資訊
+      const currentTask = tasks.find(task => task._id === taskId);
+      if (!currentTask) {
+        throw new Error('找不到任務資訊');
+      }
+      
+      // 更新任務時確保保留原有的 name 欄位
+      await updateTask(taskId, { 
+        project: projectId,
+        name: currentTask.name // 重要：保留任務名稱，避免 validation failed 錯誤
+      });
+      
       // 更新本地狀態
       setTasks(tasks.map(task => 
         task._id === taskId ? { ...task, project: projectId } : task
       ));
     } catch (err) {
+      console.error('更新任務-專案關聯失敗:', err);
       setError(err.message || '更新任務關聯失敗');
     }
   };
@@ -332,6 +399,17 @@ function ProjectManager() {
   };
 
   const renderStatsContent = () => {
+    // 如果沒有用戶登入，顯示需要登入的提示
+    if (!currentUser) {
+      return (
+        <Box sx={{ p: 2, textAlign: 'center' }}>
+          <Typography variant="body1" color="text.secondary">
+            請登入以查看專案統計
+          </Typography>
+        </Box>
+      );
+    }
+
     if (error) {
       return (
         <Box sx={{ p: 2 }}>
@@ -359,7 +437,7 @@ function ProjectManager() {
 
     return (
       <Box sx={{ mt: 3 }}>
-        {stats ? (
+        {stats && currentUser ? (
           <>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
               <Button

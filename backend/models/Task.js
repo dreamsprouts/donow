@@ -6,6 +6,11 @@ const taskSchema = new mongoose.Schema({
     required: true,
     default: '新任務'
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   color: {
     type: String,
     default: function() {
